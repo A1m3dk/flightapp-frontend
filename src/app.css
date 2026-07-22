@@ -1,0 +1,422 @@
+:root {
+  --bg: #0a0d12;
+  --panel: #12161d;
+  --panel-raised: #171c25;
+  --border: #232935;
+  --border-bright: #3a4354;
+  --amber: #ffb454;
+  --amber-dim: #8a6a3a;
+  --green: #3ddc84;
+  --red: #ff5c5c;
+  --text: #e6eaf0;
+  --text-dim: #7c8797;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at top, rgba(255, 180, 84, 0.05), transparent 60%);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 1.5rem 1.25rem 3rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.app-title {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  text-shadow: 0 0 18px rgba(255, 180, 84, 0.35);
+  margin: 0;
+}
+
+.app-subtitle {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 1.5rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.9rem;
+}
+
+.search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+.search-button {
+  background: var(--amber);
+  color: #1a1206;
+  border: none;
+  border-radius: 6px;
+  padding: 0.65rem 1.3rem;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.search-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.error-msg {
+  font-family: var(--mono);
+  color: var(--red);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.4rem;
+  margin-top: 1.25rem;
+}
+
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--amber-dim);
+  opacity: 0.6;
+}
+.panel::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 4px 0 0 0;
+}
+.panel::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 4px 0;
+}
+
+.flight-title {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.15rem;
+  color: var(--text);
+}
+
+.flight-route {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0 0 1.1rem;
+}
+
+.leg-grid {
+  display: flex;
+  position: relative;
+  gap: 1.5rem;
+}
+
+.leg-grid::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--border-bright);
+}
+
+.leg-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.leg-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--amber);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 0.55rem;
+}
+
+.leg-row {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin: 0 0 0.3rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.leg-row span:last-child {
+  color: var(--text);
+  text-align: right;
+}
+
+.status-pill {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  margin: 0.35rem 0;
+  letter-spacing: 0.03em;
+}
+.status-pill.ontime {
+  color: var(--green);
+  background: rgba(61, 220, 132, 0.12);
+  border: 1px solid rgba(61, 220, 132, 0.3);
+}
+.status-pill.delayed {
+  color: var(--red);
+  background: rgba(255, 92, 92, 0.12);
+  border: 1px solid rgba(255, 92, 92, 0.3);
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25rem 0;
+}
+
+.aircraft-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.aircraft-photo {
+  width: 140px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.aircraft-details p {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0 0 0.3rem;
+}
+.aircraft-details p strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.section-heading {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 0.75rem;
+}
+
+.map-frame {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.no-data-msg {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: normal;
+}
+
+.atc-note {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0 0 0.9rem;
+  line-height: 1.4;
+}
+
+.atc-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.atc-button {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #1a1206;
+  background: var(--amber);
+  letter-spacing: 0.02em;
+}
+.tracked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tracked-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+}
+
+.tracked-info {
+  cursor: pointer;
+  flex: 1;
+}
+
+.tracked-number {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 0.15rem;
+  color: var(--text);
+}
+
+.tracked-meta {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.tracked-status {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--amber);
+  margin-top: 0.25rem;
+}
+
+.tracked-menu-wrap {
+  position: relative;
+}
+
+.dots-button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  line-height: 1;
+}
+
+.dots-button:hover {
+  color: var(--text);
+}
+
+.dots-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 10;
+  min-width: 110px;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--panel-raised);
+}
+
+.dropdown-item.remove {
+  color: var(--red);
+}
+
+.track-button {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  border: 1px solid var(--amber-dim);
+  background: transparent;
+  color: var(--amber);
+}
+
+.track-button.tracked {
+  background: var(--amber);
+  color: #1a1206;
+  border-color: var(--amber);
+}
