@@ -11,6 +11,8 @@ import {
   addTrackedFlight,
   removeTrackedFlight,
   updateTrackedFlight,
+  getRecentSearches,
+  addRecentSearch,
 } from "./storage";
 import { requestNotificationPermission, notify } from "./notifications";
 import FlightStatusCard from "./FlightStatusCard";
@@ -18,9 +20,13 @@ import FlightMap from "./FlightMap";
 import AtcLinks from "./AtcLinks";
 import TrackedFlights from "./TrackedFlights";
 
+function todayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function App() {
   const [flightNumber, setFlightNumber] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(todayDate());
   const [flight, setFlight] = useState(null);
   const [aircraftPhoto, setAircraftPhoto] = useState(null);
   const [aircraftInfo, setAircraftInfo] = useState(null);
@@ -28,11 +34,14 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [tracked, setTracked] = useState([]);
+  const [recent, setRecent] = useState([]);
+  const [lastFetchedAt, setLastFetchedAt] = useState(null);
 
   const pollRef = useRef(null);
 
   useEffect(() => {
     setTracked(getTrackedFlights());
+    setRecent(getRecentSearches());
     requestNotificationPermission();
   }, []);
 
@@ -40,6 +49,16 @@ function App() {
     pollRef.current = setInterval(checkTrackedFlights, 5 * 60 * 1000);
     return () => clearInterval(pollRef.current);
   }, [tracked]);
+
+  function getDelayMinutes(leg) {
+    if (!leg) return 0;
+    const scheduled = leg.scheduledTime?.local;
+    const actual = leg.actualTime?.local || leg.predictedTime?.local;
+    if (!scheduled || !actual) return 0;
+    const diffMs = new Date(actual) - new Date(scheduled);
+    const diffMin = Math.round(diffMs / 60000);
+    return diffMin > 0 ? diffMin : 0;
+  }
 
   async function checkTrackedFlights() {
     const list = getTrackedFlights();
@@ -78,6 +97,7 @@ function App() {
   async function handleSearch(overrideNumber, overrideDate) {
     const numberToUse = overrideNumber || flightNumber;
     const dateToUse = overrideDate || date;
+    if (!numberToUse || !dateToUse) return;
 
     setLoading(true);
     setError("");
@@ -89,6 +109,10 @@ function App() {
     try {
       const data = await fetchFlightStatus(numberToUse, dateToUse);
       setFlight(data);
+      setLastFetchedAt(new Date());
+
+      const updatedRecent = addRecentSearch(numberToUse, dateToUse);
+      setRecent(updatedRecent);
 
       if (data.aircraft?.reg) {
         const photo = await fetchAircraftPhoto(data.aircraft.reg);
@@ -105,6 +129,10 @@ function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter") handleSearch();
   }
 
   function isCurrentFlightTracked() {
@@ -150,7 +178,12 @@ function App() {
     setDate(f.date);
     handleSearch(f.flightNumber, f.date);
   }
-  
+
+  function handleSelectRecent(r) {
+    setFlightNumber(r.flightNumber);
+    setDate(r.date);
+    handleSearch(r.flightNumber, r.date);
+  }
 
   return (
     <div className="app-shell">
@@ -165,18 +198,34 @@ function App() {
           placeholder="Flight number e.g. EK123"
           value={flightNumber}
           onChange={(e) => setFlightNumber(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="search-input"
         />
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="search-input"
         />
         <button onClick={() => handleSearch()} className="search-button" disabled={loading}>
           {loading ? "Searching" : "Search"}
         </button>
       </div>
+
+      {recent.length > 0 && (
+        <div className="recent-chips">
+          {recent.map((r, i) => (
+            <button
+              key={i}
+              className="recent-chip"
+              onClick={() => handleSelectRecent(r)}
+            >
+              {r.flightNumber} · {r.date}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && <p className="error-msg">{error}</p>}
 
@@ -186,9 +235,25 @@ function App() {
         onRemove={handleRemoveTracked}
       />
 
-      {flight && (
+      {loading && (
+        <div className="panel skeleton-panel">
+          <div className="skeleton-line skeleton-title"></div>
+          <div className="skeleton-line skeleton-sub"></div>
+          <div className="skeleton-grid">
+            <div className="skeleton-block"></div>
+            <div className="skeleton-block"></div>
+          </div>
+        </div>
+      )}
+
+      {flight && !loading && (
         <>
-          <FlightStatusCard flight={flight} aircraftPhoto={aircraftPhoto} aircraftInfo={aircraftInfo} />
+          <FlightStatusCard
+            flight={flight}
+            aircraftPhoto={aircraftPhoto}
+            aircraftInfo={aircraftInfo}
+            lastFetchedAt={lastFetchedAt}
+          />
 
           <button
             className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
@@ -213,16 +278,6 @@ function App() {
       <p className="app-footer">Beta 1.00 — Made by A1m3dk</p>
     </div>
   );
-}
-
-function getDelayMinutes(leg) {
-  if (!leg) return 0;
-  const scheduled = leg.scheduledTime?.local;
-  const actual = leg.actualTime?.local || leg.predictedTime?.local;
-  if (!scheduled || !actual) return 0;
-  const diffMs = new Date(actual) - new Date(scheduled);
-  const diffMin = Math.round(diffMs / 60000);
-  return diffMin > 0 ? diffMin : 0;
 }
 
 export default App;

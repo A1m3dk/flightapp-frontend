@@ -1,4 +1,5 @@
 const KEY = "flightapp_tracked_flights";
+const RECENT_KEY = "flightapp_recent_searches";
 
 export function getTrackedFlights() {
   try {
@@ -33,4 +34,23 @@ export function updateTrackedFlight(id, updates) {
   );
   saveTrackedFlights(list);
   return list;
+}
+
+export function getRecentSearches() {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export function addRecentSearch(flightNumber, date) {
+  const list = getRecentSearches().filter(
+    (r) => !(r.flightNumber === flightNumber && r.date === date)
+  );
+  list.unshift({ flightNumber, date });
+  const trimmed = list.slice(0, 5);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(trimmed));
+  return trimmed;
 }
