@@ -10,6 +10,9 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo }) {
 
   return (
     <div className="panel">
+    <span className={"flight-phase " + getPhaseClass(flight.status)}>
+        {getPhaseLabel(flight.status)}
+      </span>
       <h2 className="flight-title">
         {flight.airline?.name} {flight.number}
       </h2>
@@ -78,6 +81,23 @@ function formatAge(aircraftInfo) {
   if (!rollout) return "N/A";
   const years = Math.floor((Date.now() - new Date(rollout)) / (365.25 * 24 * 60 * 60 * 1000));
   return years + " yrs (built " + rollout.slice(0, 4) + ")";
+}
+
+function getPhaseLabel(status) {
+  const s = (status || "").toLowerCase();
+  if (s.includes("enroute") || s.includes("approach") || s.includes("diverted")) return "AIRBORNE";
+  if (s.includes("landed") || s.includes("arrived")) return "ARRIVED";
+  if (s.includes("cancel")) return "CANCELLED";
+  if (s.includes("expected") || s.includes("scheduled") || s.includes("unknown")) return "NOT DEPARTED";
+  return status ? status.toUpperCase() : "UNKNOWN";
+}
+
+function getPhaseClass(status) {
+  const s = (status || "").toLowerCase();
+  if (s.includes("enroute") || s.includes("approach") || s.includes("diverted")) return "phase-airborne";
+  if (s.includes("landed") || s.includes("arrived")) return "phase-arrived";
+  if (s.includes("cancel")) return "phase-cancelled";
+  return "phase-notdeparted";
 }
 
 function formatTime(t) {
