@@ -420,3 +420,11 @@ body {
   color: #1a1206;
   border-color: var(--amber);
 }
+.app-footer {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}

@@ -209,6 +209,8 @@ function App() {
           </div>
         </>
       )}
+
+      <p className="app-footer">Beta 1.00 — Made by A1m3dk</p>
     </div>
   );
 }
