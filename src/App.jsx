@@ -275,7 +275,7 @@ function App() {
         </>
       )}
 
-      <p className="app-footer">Beta 1.00 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 1.20 — Made by A1m3dk</p>
     </div>
   );
 }
