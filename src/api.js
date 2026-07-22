@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://localhost:3001";
+const BACKEND_URL = "https://flightapp-w6ob.onrender.com";
 
 export async function fetchFlightStatus(flightNumber, date) {
   const url = BACKEND_URL + "/api/flight/" + flightNumber + "/" + date;
