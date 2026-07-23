@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import "./App.css";
-import FlightTimeline from "./FlightTimeline";
 import {
   fetchFlightStatus,
   fetchAircraftPhoto,
@@ -20,9 +19,18 @@ import FlightStatusCard from "./FlightStatusCard";
 import FlightMap from "./FlightMap";
 import AtcLinks from "./AtcLinks";
 import TrackedFlights from "./TrackedFlights";
+import FlightTimeline from "./FlightTimeline";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function getStatusPhase(status) {
+  const s = (status || "").toLowerCase();
+  if (s.includes("enroute") || s.includes("approach") || s.includes("diverted")) return "AIRBORNE";
+  if (s.includes("landed") || s.includes("arrived")) return "ARRIVED";
+  if (s.includes("cancel")) return "CANCELLED";
+  return "NOT DEPARTED";
 }
 
 function App() {
@@ -47,9 +55,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    pollRef.current = setInterval(checkTrackedFlights, 5 * 60 * 1000);
+    checkTrackedFlights();
+    pollRef.current = setInterval(checkTrackedFlights, 2 * 60 * 1000);
     return () => clearInterval(pollRef.current);
-  }, [tracked]);
+  }, [tracked.length]);
 
   function getDelayMinutes(leg) {
     if (!leg) return 0;
@@ -73,6 +82,16 @@ function App() {
         const arrDelay = getDelayMinutes(arr);
         const newStatus = depDelay > 15 || arrDelay > 15 ? "Delayed" : "On time";
 
+        const statusPhase = getStatusPhase(data.status);
+        const scheduledDep = dep?.scheduledTime?.local;
+        const minsToGo = scheduledDep ? (new Date(scheduledDep) - new Date()) / 60000 : null;
+
+        const updates = {
+          lastStatus: newStatus,
+          lastGate: dep?.gate,
+          lastTerminal: dep?.terminal,
+        };
+
         if (f.lastStatus && f.lastStatus !== newStatus) {
           notify(f.flightNumber + " status changed", newStatus);
         }
@@ -83,11 +102,32 @@ function App() {
           notify(f.flightNumber + " terminal", "Terminal " + dep.terminal);
         }
 
-        const updated = updateTrackedFlight(f.id, {
-          lastStatus: newStatus,
-          lastGate: dep?.gate,
-          lastTerminal: dep?.terminal,
-        });
+        if (!f.notifiedCheckin && minsToGo != null && minsToGo <= 24 * 60 && minsToGo > 45) {
+          notify(f.flightNumber + " check-in open", "Online check-in is now open.");
+          updates.notifiedCheckin = true;
+        }
+
+        if (!f.notifiedBoardingStart && minsToGo != null && minsToGo <= 45 && minsToGo > 0 && statusPhase === "NOT DEPARTED") {
+          notify(f.flightNumber + " boarding", "Boarding is expected to begin soon.");
+          updates.notifiedBoardingStart = true;
+        }
+
+        if (!f.notifiedBoardingEnd && minsToGo != null && minsToGo <= 15 && minsToGo > -60 && statusPhase !== "AIRBORNE") {
+          notify(f.flightNumber + " boarding closing", "Boarding is expected to close shortly. Head to the gate.");
+          updates.notifiedBoardingEnd = true;
+        }
+
+        if (!f.notifiedTakeoff && statusPhase === "AIRBORNE") {
+          notify(f.flightNumber + " has taken off", "The flight is now airborne.");
+          updates.notifiedTakeoff = true;
+        }
+
+        if (!f.notifiedLanding && statusPhase === "ARRIVED") {
+          notify(f.flightNumber + " has landed", "The flight has arrived.");
+          updates.notifiedLanding = true;
+        }
+
+        const updated = updateTrackedFlight(f.id, updates);
         setTracked(updated);
       } catch (err) {
         // silent fail for individual flight, keep checking the rest
@@ -162,6 +202,11 @@ function App() {
       lastStatus: null,
       lastGate: flight.departure?.gate,
       lastTerminal: flight.departure?.terminal,
+      notifiedCheckin: false,
+      notifiedBoardingStart: false,
+      notifiedBoardingEnd: false,
+      notifiedTakeoff: false,
+      notifiedLanding: false,
     });
     setTracked(updated);
   }
@@ -252,6 +297,7 @@ function App() {
             aircraftInfo={aircraftInfo}
             lastFetchedAt={lastFetchedAt}
           />
+
           <FlightTimeline flight={flight} />
 
           <button
@@ -274,7 +320,7 @@ function App() {
         </>
       )}
 
-      <p className="app-footer">Beta 3.00 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 2.00 — Made by A1m3dk</p>
     </div>
   );
 }

@@ -862,3 +862,10 @@ body {
 .checkin-closed {
   color: var(--red);
 }
+
+.phase-boarding {
+  color: var(--amber);
+  background: rgba(255, 180, 84, 0.14);
+  border: 1px solid rgba(255, 180, 84, 0.4);
+  text-shadow: 0 0 8px rgba(255, 180, 84, 0.35);
+}
