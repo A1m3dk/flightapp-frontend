@@ -706,8 +706,12 @@ body {
   }
 
   input[type="date"].search-input {
-    font-size: 0.8rem;
-    padding-right: 0.5rem;
+    font-size: 0.85rem;
+    height: 44px;
+    padding: 0.65rem 0.8rem;
+    text-align: left;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .search-bar {
@@ -835,3 +839,13 @@ body {
     height: 280px !important;
   }
 }
+
+.flight-title-row {
+    margin-bottom: 0.6rem;
+  }
+
+  .flight-route {
+    margin-top: 0.3rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
