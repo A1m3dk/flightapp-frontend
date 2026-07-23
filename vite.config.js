@@ -6,10 +6,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-  registerType: 'autoUpdate',
-  devOptions: {
-    enabled: true,
-  },
+      registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true,
+      },
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+      },
       manifest: {
         name: 'FlightApp',
         short_name: 'FlightApp',
