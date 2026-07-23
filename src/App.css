@@ -683,3 +683,144 @@ body {
   font-size: 0.72rem;
   color: var(--amber);
 }
+
+@media (max-width: 600px) {
+  .app-shell {
+    padding: 1rem 0.85rem 2.5rem;
+  }
+
+  .app-title {
+    font-size: 1.25rem;
+  }
+
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .leg-grid {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .leg-grid::before {
+    display: none;
+  }
+
+  .leg-col {
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--border-bright);
+  }
+
+  .leg-col:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .leg-row {
+    font-size: 0.72rem;
+  }
+
+  .flight-title-row {
+    gap: 0.4rem;
+  }
+
+  .flight-title {
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .icon-button {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .flight-meta-row {
+    gap: 0.6rem;
+  }
+
+  .flight-meta-item {
+    font-size: 0.65rem;
+  }
+
+  .flight-route {
+    font-size: 0.72rem;
+  }
+
+  .aircraft-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .aircraft-photo,
+  .aircraft-photo-placeholder {
+    width: 100%;
+    max-width: 220px;
+  }
+
+  .timeline-row {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .timeline-times {
+    gap: 0.6rem;
+  }
+
+  .timeline-time-cell {
+    font-size: 0.65rem;
+  }
+
+  .tracked-item {
+    flex-wrap: wrap;
+  }
+
+  .tracked-number {
+    font-size: 0.82rem;
+  }
+
+  .recent-chips {
+    gap: 0.4rem;
+  }
+
+  .recent-chip {
+    font-size: 0.65rem;
+  }
+
+  .atc-buttons {
+    flex-direction: column;
+  }
+
+  .atc-button {
+    text-align: center;
+  }
+
+  .phase-row {
+    gap: 0.4rem;
+  }
+
+  .flight-phase {
+    font-size: 0.62rem;
+  }
+
+  .countdown-badge {
+    font-size: 0.62rem;
+  }
+
+  .map-frame > div {
+    height: 280px !important;
+  }
+}
