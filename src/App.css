@@ -710,6 +710,10 @@ body {
     padding-right: 0.5rem;
   }
 
+  .search-bar {
+    overflow: hidden;
+  }
+
   .search-button {
     width: 100%;
   }
