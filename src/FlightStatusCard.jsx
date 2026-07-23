@@ -146,7 +146,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
         {aircraftPhoto ? (
           <img
             className="aircraft-photo"
-            src={aircraftPhoto.imageUrl}
+            src={"https://flightapp-w6ob.onrender.com/api/image-proxy?url=" + encodeURIComponent(aircraftPhoto.imageUrl)}
             alt="Aircraft"
           />
         ) : (
