@@ -670,3 +670,16 @@ body {
   color: var(--text-dim);
   opacity: 0.75;
 }
+
+.flight-meta-row {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin: -0.4rem 0 1.1rem;
+}
+
+.flight-meta-item {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--amber);
+}

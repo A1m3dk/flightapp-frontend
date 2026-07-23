@@ -96,6 +96,14 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
       <p className="flight-route">
         {dep?.airport?.name} ({dep?.airport?.icao}) &rarr; {arr?.airport?.name} ({arr?.airport?.icao})
       </p>
+      <p className="flight-meta-row">
+        {getFlightDuration(dep, arr) && (
+          <span className="flight-meta-item">Flight time: {getFlightDuration(dep, arr)}</span>
+        )}
+        {getTimezoneDiff(dep, arr) && (
+          <span className="flight-meta-item">Timezone: {getTimezoneDiff(dep, arr)}</span>
+        )}
+      </p>
 
       <div className="leg-grid">
         <div className="leg-col">
@@ -235,6 +243,43 @@ function getPhaseClass(status) {
   return "phase-notdeparted";
 }
 
+function getFlightDuration(dep, arr) {
+  const depTime = dep?.scheduledTime?.utc;
+  const arrTime = arr?.scheduledTime?.utc;
+  if (!depTime || !arrTime) return null;
+  const diffMs = new Date(arrTime + "Z".replace("ZZ", "Z")) - new Date(depTime + "Z".replace("ZZ", "Z"));
+  const totalMin = Math.round(diffMs / 60000);
+  if (totalMin <= 0) return null;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h + "h " + m + "m";
+}
+
+function getTimezoneDiff(dep, arr) {
+  const depLocal = dep?.scheduledTime?.local;
+  const depUtc = dep?.scheduledTime?.utc;
+  const arrLocal = arr?.scheduledTime?.local;
+  const arrUtc = arr?.scheduledTime?.utc;
+  if (!depLocal || !depUtc || !arrLocal || !arrUtc) return null;
+
+  const depOffset = getUtcOffsetHours(depLocal, depUtc);
+  const arrOffset = getUtcOffsetHours(arrLocal, arrUtc);
+  if (depOffset == null || arrOffset == null) return null;
+
+  const diff = arrOffset - depOffset;
+  if (diff === 0) return "Same time zone";
+  const sign = diff > 0 ? "+" : "";
+  return sign + diff + "h vs departure";
+}
+
+function getUtcOffsetHours(localStr, utcStr) {
+  const match = localStr.match(/([+-]\d{2}):(\d{2})$/);
+  if (!match) return null;
+  const sign = match[1][0] === "-" ? -1 : 1;
+  const hours = parseInt(match[1].slice(1), 10);
+  const mins = parseInt(match[2], 10);
+  return sign * (hours + mins / 60);
+}
 function getDelayMinutes(leg) {
   if (!leg) return 0;
   const scheduled = leg.scheduledTime?.local;
