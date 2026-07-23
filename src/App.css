@@ -597,3 +597,76 @@ body {
   text-align: center;
   padding: 0.5rem;
 }
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.timeline-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.timeline-row:last-child {
+  border-bottom: none;
+}
+
+.timeline-label {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--amber);
+  min-width: 110px;
+}
+
+.timeline-computed {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.timeline-times {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.timeline-time-cell {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.timeline-time-cell.highlight .timeline-time-airport {
+  color: var(--text);
+}
+
+.timeline-time-cell.empty {
+  opacity: 0.5;
+}
+
+.timeline-time-tag {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.timeline-time-airport {
+  font-size: 0.75rem;
+}
+
+.timeline-time-user {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  opacity: 0.75;
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./App.css";
+import FlightTimeline from "./FlightTimeline";
 import {
   fetchFlightStatus,
   fetchAircraftPhoto,
@@ -251,7 +252,8 @@ function App() {
             aircraftInfo={aircraftInfo}
             lastFetchedAt={lastFetchedAt}
           />
-
+          <FlightTimeline flight={flight} />
+          
           <button
             className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
             onClick={handleTrackToggle}

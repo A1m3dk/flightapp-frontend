@@ -4,7 +4,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
   const [copiedField, setCopiedField] = useState(null);
   const [countdown, setCountdown] = useState("");
   const [depWeather, setDepWeather] = useState(null);
-  const [arrWeather, setArrWeather] = useState(null);
+  const [arrForecast, setArrForecast] = useState(null);
 
   const dep = flight?.departure;
   const arr = flight?.arrival;
@@ -33,12 +33,13 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
   useEffect(() => {
     async function loadWeather() {
       if (dep?.airport?.location) {
-        const w = await fetchWeather(dep.airport.location.lat, dep.airport.location.lon);
+        const w = await fetchCurrentWeather(dep.airport.location.lat, dep.airport.location.lon);
         setDepWeather(w);
       }
-      if (arr?.airport?.location) {
-        const w = await fetchWeather(arr.airport.location.lat, arr.airport.location.lon);
-        setArrWeather(w);
+      const arrTime = arr?.scheduledTime?.local || arr?.predictedTime?.local;
+      if (arr?.airport?.location && arrTime) {
+        const f = await fetchForecastAt(arr.airport.location.lat, arr.airport.location.lon, arrTime);
+        setArrForecast(f);
       }
     }
     loadWeather();
@@ -120,7 +121,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
             </span>
           </p>
           {depWeather && (
-            <p className="leg-row"><span>Weather</span><span>{depWeather}</span></p>
+            <p className="leg-row"><span>Weather now</span><span>{depWeather}</span></p>
           )}
         </div>
 
@@ -133,8 +134,8 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
           </span>
           <p className="leg-row"><span>Terminal</span><span>{arr?.terminal || "N/A"}</span></p>
           <p className="leg-row"><span>Gate</span><span>{arr?.gate || "N/A"}</span></p>
-          {arrWeather && (
-            <p className="leg-row"><span>Weather</span><span>{arrWeather}</span></p>
+          {arrForecast && (
+            <p className="leg-row"><span>Forecast on arrival</span><span>{arrForecast}</span></p>
           )}
         </div>
       </div>
@@ -166,7 +167,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
   );
 }
 
-async function fetchWeather(lat, lon) {
+async function fetchCurrentWeather(lat, lon) {
   try {
     const res = await fetch(
       "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon + "&current_weather=true"
@@ -175,6 +176,30 @@ async function fetchWeather(lat, lon) {
     const data = await res.json();
     const temp = data.current_weather?.temperature;
     const code = data.current_weather?.weathercode;
+    if (temp == null) return null;
+    return Math.round(temp) + "°C, " + weatherCodeLabel(code);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function fetchForecastAt(lat, lon, targetLocalStr) {
+  try {
+    const res = await fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+      "&hourly=temperature_2m,weathercode&timezone=auto&forecast_days=3"
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const times = data.hourly?.time || [];
+    if (!times.length) return null;
+
+    const targetDatePart = targetLocalStr.slice(0, 13);
+    let idx = times.findIndex((t) => t.slice(0, 13) === targetDatePart);
+    if (idx === -1) idx = 0;
+
+    const temp = data.hourly.temperature_2m[idx];
+    const code = data.hourly.weathercode[idx];
     if (temp == null) return null;
     return Math.round(temp) + "°C, " + weatherCodeLabel(code);
   } catch (err) {
