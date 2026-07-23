@@ -583,3 +583,17 @@ body {
   100% { background-position: -200% 0; }
 }
 
+.aircraft-photo-placeholder {
+  width: 140px;
+  height: 90px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 0.5rem;
+}

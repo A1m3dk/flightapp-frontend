@@ -143,12 +143,14 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
 
       <p className="section-heading">Aircraft</p>
       <div className="aircraft-row">
-        {aircraftPhoto && (
+        {aircraftPhoto ? (
           <img
             className="aircraft-photo"
             src={aircraftPhoto.thumbnail_large?.src || aircraftPhoto.thumbnail?.src}
             alt="Aircraft"
           />
+        ) : (
+          <div className="aircraft-photo-placeholder">No photo available</div>
         )}
         <div className="aircraft-details">
           <p><strong>Type:</strong> {aircraft?.model || "Unknown type"}</p>
