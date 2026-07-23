@@ -247,7 +247,12 @@ function getFlightDuration(dep, arr) {
   const depTime = dep?.scheduledTime?.utc;
   const arrTime = arr?.scheduledTime?.utc;
   if (!depTime || !arrTime) return null;
-  const diffMs = new Date(arrTime + "Z".replace("ZZ", "Z")) - new Date(depTime + "Z".replace("ZZ", "Z"));
+
+  const depDate = new Date(depTime.replace(" ", "T"));
+  const arrDate = new Date(arrTime.replace(" ", "T"));
+  if (isNaN(depDate) || isNaN(arrDate)) return null;
+
+  const diffMs = arrDate - depDate;
   const totalMin = Math.round(diffMs / 60000);
   if (totalMin <= 0) return null;
   const h = Math.floor(totalMin / 60);
