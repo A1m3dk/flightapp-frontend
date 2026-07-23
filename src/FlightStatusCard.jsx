@@ -146,7 +146,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
         {aircraftPhoto ? (
           <img
             className="aircraft-photo"
-            src={aircraftPhoto.thumbnail_large?.src || aircraftPhoto.thumbnail?.src}
+            src={aircraftPhoto.imageUrl}
             alt="Aircraft"
           />
         ) : (
