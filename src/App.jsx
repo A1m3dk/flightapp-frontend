@@ -110,23 +110,20 @@ function App() {
       const data = await fetchFlightStatus(numberToUse, dateToUse);
       setFlight(data);
       setLastFetchedAt(new Date());
+      setLoading(false);
 
       const updatedRecent = addRecentSearch(numberToUse, dateToUse);
       setRecent(updatedRecent);
 
       if (data.aircraft?.reg) {
-        const photo = await fetchAircraftPhoto(data.aircraft.reg);
-        setAircraftPhoto(photo);
-        const info = await fetchAircraftInfo(data.aircraft.reg);
-        setAircraftInfo(info);
+        fetchAircraftPhoto(data.aircraft.reg).then(setAircraftPhoto);
+        fetchAircraftInfo(data.aircraft.reg).then(setAircraftInfo);
       }
 
       const callsign = data.callSign || numberToUse;
-      const pos = await fetchLivePosition(callsign);
-      setPosition(pos);
+      fetchLivePosition(callsign).then(setPosition);
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   }
