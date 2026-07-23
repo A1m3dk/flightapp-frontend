@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }) {
   const [copiedField, setCopiedField] = useState(null);
   const [countdown, setCountdown] = useState("");
+  const [checkinStatus, setCheckinStatus] = useState("");
   const [depWeather, setDepWeather] = useState(null);
   const [arrForecast, setArrForecast] = useState(null);
 
@@ -18,11 +19,21 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
       const diffMs = target - new Date();
       if (diffMs <= 0) {
         setCountdown("");
+        setCheckinStatus("");
         return;
       }
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       setCountdown(hours + "h " + mins + "m");
+
+      const totalMinsRemaining = diffMs / 60000;
+      if (totalMinsRemaining <= 60) {
+        setCheckinStatus("closed");
+      } else if (totalMinsRemaining <= 24 * 60) {
+        setCheckinStatus("open");
+      } else {
+        setCheckinStatus("");
+      }
     }
 
     tick();
@@ -78,7 +89,14 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
         <span className={"flight-phase " + getPhaseClass(flight.status)}>
           {getPhaseLabel(flight.status)}
         </span>
-        {countdown && <span className="countdown-badge">Departs in {countdown}</span>}
+        {countdown && getPhaseLabel(flight.status) === "NOT DEPARTED" && (
+          <span className="countdown-badge">Departs in {countdown}</span>
+        )}
+        {checkinStatus && getPhaseLabel(flight.status) === "NOT DEPARTED" && (
+          <span className={"checkin-badge checkin-" + checkinStatus}>
+            {checkinStatus === "open" ? "Check-in open" : "Check-in closed"}
+          </span>
+        )}
       </div>
 
       <div className="flight-title-row">
