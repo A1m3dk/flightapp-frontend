@@ -253,7 +253,7 @@ function App() {
             lastFetchedAt={lastFetchedAt}
           />
           <FlightTimeline flight={flight} />
-          
+
           <button
             className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
             onClick={handleTrackToggle}
@@ -274,7 +274,7 @@ function App() {
         </>
       )}
 
-      <p className="app-footer">Beta 1.20 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 2.00 — Made by A1m3dk</p>
     </div>
   );
 }
