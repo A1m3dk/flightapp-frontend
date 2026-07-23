@@ -849,3 +849,16 @@ body {
     margin-bottom: 0.5rem;
     line-height: 1.4;
   }
+
+.checkin-badge {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+.checkin-open {
+  color: var(--green);
+}
+
+.checkin-closed {
+  color: var(--red);
+}
