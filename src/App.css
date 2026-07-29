@@ -869,3 +869,15 @@ body {
   border: 1px solid rgba(255, 180, 84, 0.4);
   text-shadow: 0 0 8px rgba(255, 180, 84, 0.35);
 }
+
+.enable-push-button {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--amber);
+  background: rgba(255, 180, 84, 0.1);
+  border: 1px solid var(--amber-dim);
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  margin: 0.6rem 0 1rem;
+  cursor: pointer;
+}

@@ -10,7 +10,7 @@ function TrackedFlights({ flights, onSelect, onRemove }) {
       <p className="section-heading">Tracked Flights</p>
       <div className="tracked-list">
         {flights.map((f) => (
-          <div key={f.id} className="tracked-item">
+          <div key={f._id} className="tracked-item">
             <div className="tracked-info" onClick={() => onSelect(f)}>
               <p className="tracked-number">{f.flightNumber}</p>
               <p className="tracked-meta">{f.date} {f.route ? "· " + f.route : ""}</p>
@@ -19,16 +19,16 @@ function TrackedFlights({ flights, onSelect, onRemove }) {
             <div className="tracked-menu-wrap">
               <button
                 className="dots-button"
-                onClick={() => setOpenMenuId(openMenuId === f.id ? null : f.id)}
+                onClick={() => setOpenMenuId(openMenuId === f._id ? null : f._id)}
               >
                 ⋮
               </button>
-              {openMenuId === f.id && (
+              {openMenuId === f._id && (
                 <div className="dots-dropdown">
                   <button
                     className="dropdown-item remove"
                     onClick={() => {
-                      onRemove(f.id);
+                      onRemove(f._id);
                       setOpenMenuId(null);
                     }}
                   >

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import {
   fetchFlightStatus,
@@ -7,14 +7,13 @@ import {
   fetchLivePosition,
 } from "./api";
 import {
+  getRecentSearches,
+  addRecentSearch,
   getTrackedFlights,
   addTrackedFlight,
   removeTrackedFlight,
-  updateTrackedFlight,
-  getRecentSearches,
-  addRecentSearch,
 } from "./storage";
-import { requestNotificationPermission, notify } from "./notifications";
+import { setupPushNotifications, getDeviceIdSync } from "./push";
 import FlightStatusCard from "./FlightStatusCard";
 import FlightMap from "./FlightMap";
 import AtcLinks from "./AtcLinks";
@@ -23,14 +22,6 @@ import FlightTimeline from "./FlightTimeline";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function getStatusPhase(status) {
-  const s = (status || "").toLowerCase();
-  if (s.includes("enroute") || s.includes("approach") || s.includes("diverted")) return "AIRBORNE";
-  if (s.includes("landed") || s.includes("arrived")) return "ARRIVED";
-  if (s.includes("cancel")) return "CANCELLED";
-  return "NOT DEPARTED";
 }
 
 function App() {
@@ -45,93 +36,28 @@ function App() {
   const [tracked, setTracked] = useState([]);
   const [recent, setRecent] = useState([]);
   const [lastFetchedAt, setLastFetchedAt] = useState(null);
-
-  const pollRef = useRef(null);
+  const [deviceId, setDeviceId] = useState(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   useEffect(() => {
-    setTracked(getTrackedFlights());
     setRecent(getRecentSearches());
-    requestNotificationPermission();
+    const id = getDeviceIdSync();
+    setDeviceId(id);
+    refreshTracked(id);
   }, []);
 
-  useEffect(() => {
-    checkTrackedFlights();
-    pollRef.current = setInterval(checkTrackedFlights, 2 * 60 * 1000);
-    return () => clearInterval(pollRef.current);
-  }, [tracked.length]);
-
-  function getDelayMinutes(leg) {
-    if (!leg) return 0;
-    const scheduled = leg.scheduledTime?.local;
-    const actual = leg.actualTime?.local || leg.predictedTime?.local;
-    if (!scheduled || !actual) return 0;
-    const diffMs = new Date(actual) - new Date(scheduled);
-    const diffMin = Math.round(diffMs / 60000);
-    return diffMin > 0 ? diffMin : 0;
+  async function refreshTracked(id) {
+    const list = await getTrackedFlights(id);
+    setTracked(list);
   }
 
-  async function checkTrackedFlights() {
-    const list = getTrackedFlights();
-    for (const f of list) {
-      try {
-        const data = await fetchFlightStatus(f.flightNumber, f.date);
-        const dep = data.departure;
-        const arr = data.arrival;
-
-        const depDelay = getDelayMinutes(dep);
-        const arrDelay = getDelayMinutes(arr);
-        const newStatus = depDelay > 15 || arrDelay > 15 ? "Delayed" : "On time";
-
-        const statusPhase = getStatusPhase(data.status);
-        const scheduledDep = dep?.scheduledTime?.local;
-        const minsToGo = scheduledDep ? (new Date(scheduledDep) - new Date()) / 60000 : null;
-
-        const updates = {
-          lastStatus: newStatus,
-          lastGate: dep?.gate,
-          lastTerminal: dep?.terminal,
-        };
-
-        if (f.lastStatus && f.lastStatus !== newStatus) {
-          notify(f.flightNumber + " status changed", newStatus);
-        }
-        if (f.lastGate !== dep?.gate && dep?.gate) {
-          notify(f.flightNumber + " gate assigned", "Gate " + dep.gate);
-        }
-        if (f.lastTerminal !== dep?.terminal && dep?.terminal) {
-          notify(f.flightNumber + " terminal", "Terminal " + dep.terminal);
-        }
-
-        if (!f.notifiedCheckin && minsToGo != null && minsToGo <= 24 * 60 && minsToGo > 45) {
-          notify(f.flightNumber + " check-in open", "Online check-in is now open.");
-          updates.notifiedCheckin = true;
-        }
-
-        if (!f.notifiedBoardingStart && minsToGo != null && minsToGo <= 45 && minsToGo > 0 && statusPhase === "NOT DEPARTED") {
-          notify(f.flightNumber + " boarding", "Boarding is expected to begin soon.");
-          updates.notifiedBoardingStart = true;
-        }
-
-        if (!f.notifiedBoardingEnd && minsToGo != null && minsToGo <= 15 && minsToGo > -60 && statusPhase !== "AIRBORNE") {
-          notify(f.flightNumber + " boarding closing", "Boarding is expected to close shortly. Head to the gate.");
-          updates.notifiedBoardingEnd = true;
-        }
-
-        if (!f.notifiedTakeoff && statusPhase === "AIRBORNE") {
-          notify(f.flightNumber + " has taken off", "The flight is now airborne.");
-          updates.notifiedTakeoff = true;
-        }
-
-        if (!f.notifiedLanding && statusPhase === "ARRIVED") {
-          notify(f.flightNumber + " has landed", "The flight has arrived.");
-          updates.notifiedLanding = true;
-        }
-
-        const updated = updateTrackedFlight(f.id, updates);
-        setTracked(updated);
-      } catch (err) {
-        // silent fail for individual flight, keep checking the rest
-      }
+  async function enablePush() {
+    const id = await setupPushNotifications();
+    if (id) {
+      setPushEnabled(true);
+      refreshTracked(id);
+    } else {
+      alert("Notifications permission is needed for background flight alerts. Please allow notifications and try again.");
     }
   }
 
@@ -175,45 +101,31 @@ function App() {
 
   function isCurrentFlightTracked() {
     if (!flight) return false;
-    const id = flight.number + "_" + date;
-    return tracked.find((f) => f.id === id) != null;
+    return tracked.find((f) => f.flightNumber === flight.number && f.date === date) != null;
   }
 
   async function handleTrackToggle() {
     if (!flight) return;
-    const id = flight.number + "_" + date;
 
-    if (isCurrentFlightTracked()) {
-      const updated = removeTrackedFlight(id);
-      setTracked(updated);
+    const existing = tracked.find((f) => f.flightNumber === flight.number && f.date === date);
+    if (existing) {
+      await removeTrackedFlight(existing._id);
+      refreshTracked(deviceId);
       return;
     }
 
-    const granted = await requestNotificationPermission();
-    if (!granted) {
-      alert("Enable notifications in your browser settings to get flight alerts.");
+    if (!pushEnabled) {
+      await enablePush();
     }
 
-    const updated = addTrackedFlight({
-      id: id,
-      flightNumber: flight.number,
-      date: date,
-      route: flight.departure?.airport?.icao + " to " + flight.arrival?.airport?.icao,
-      lastStatus: null,
-      lastGate: flight.departure?.gate,
-      lastTerminal: flight.departure?.terminal,
-      notifiedCheckin: false,
-      notifiedBoardingStart: false,
-      notifiedBoardingEnd: false,
-      notifiedTakeoff: false,
-      notifiedLanding: false,
-    });
-    setTracked(updated);
+    const route = flight.departure?.airport?.icao + " to " + flight.arrival?.airport?.icao;
+    await addTrackedFlight(deviceId, flight.number, date, route);
+    refreshTracked(deviceId);
   }
 
-  function handleRemoveTracked(id) {
-    const updated = removeTrackedFlight(id);
-    setTracked(updated);
+  async function handleRemoveTracked(id) {
+    await removeTrackedFlight(id);
+    refreshTracked(deviceId);
   }
 
   function handleSelectTracked(f) {
@@ -234,6 +146,12 @@ function App() {
         <h1 className="app-title">FLIGHTAPP</h1>
       </div>
       <p className="app-subtitle">Personal Flight Ops Tracker</p>
+
+      {!pushEnabled && (
+        <button className="enable-push-button" onClick={enablePush}>
+          Enable background flight alerts
+        </button>
+      )}
 
       <div className="search-bar">
         <input
@@ -259,11 +177,7 @@ function App() {
       {recent.length > 0 && (
         <div className="recent-chips">
           {recent.map((r, i) => (
-            <button
-              key={i}
-              className="recent-chip"
-              onClick={() => handleSelectRecent(r)}
-            >
+            <button key={i} className="recent-chip" onClick={() => handleSelectRecent(r)}>
               {r.flightNumber} · {r.date}
             </button>
           ))}
@@ -272,11 +186,7 @@ function App() {
 
       {error && <p className="error-msg">{error}</p>}
 
-      <TrackedFlights
-        flights={tracked}
-        onSelect={handleSelectTracked}
-        onRemove={handleRemoveTracked}
-      />
+      <TrackedFlights flights={tracked} onSelect={handleSelectTracked} onRemove={handleRemoveTracked} />
 
       {loading && (
         <div className="panel skeleton-panel">
@@ -320,7 +230,7 @@ function App() {
         </>
       )}
 
-      <p className="app-footer">Beta 3.12 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 3.00 — Made by A1m3dk</p>
     </div>
   );
 }
