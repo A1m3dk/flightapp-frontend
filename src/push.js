@@ -66,7 +66,7 @@ export function getDeviceIdSync() {
 export async function checkPushStatus() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
   try {
-    const registration = await navigator.serviceWorker.getRegistration("/sw-push.js");
+    const registration = await navigator.serviceWorker.getRegistration("/");
     if (!registration) return false;
     const subscription = await registration.pushManager.getSubscription();
     return subscription != null;
@@ -78,7 +78,7 @@ export async function checkPushStatus() {
 export async function disablePushNotifications() {
   if (!("serviceWorker" in navigator)) return;
   try {
-    const registration = await navigator.serviceWorker.getRegistration("/sw-push.js");
+    const registration = await navigator.serviceWorker.getRegistration("/");
     if (!registration) return;
     const subscription = await registration.pushManager.getSubscription();
     if (subscription) {
