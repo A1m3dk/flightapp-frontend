@@ -20,6 +20,7 @@ import AtcLinks from "./AtcLinks";
 import TrackedFlights from "./TrackedFlights";
 import FlightTimeline from "./FlightTimeline";
 import Settings from "./Settings";
+import Hero from "./Hero";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -40,6 +41,8 @@ function App() {
   const [deviceId, setDeviceId] = useState(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(true);
+  const [autoLoaded, setAutoLoaded] = useState(false);
 
   useEffect(() => {
     setRecent(getRecentSearches());
@@ -48,6 +51,15 @@ function App() {
     refreshTracked(id);
     checkPushStatus().then(setPushEnabled);
   }, []);
+
+  useEffect(() => {
+    if (autoLoaded || tracked.length === 0 || flight) return;
+    const sorted = [...tracked].sort((a, b) => a.date.localeCompare(b.date));
+    const primary = sorted[0];
+    setAutoLoaded(true);
+    setSearchOpen(false);
+    handleSearch(primary.flightNumber, primary.date);
+  }, [tracked, autoLoaded]);
 
   async function refreshTracked(id) {
     const list = await getTrackedFlights(id);
@@ -143,6 +155,7 @@ function App() {
   function handleSelectTracked(f) {
     setFlightNumber(f.flightNumber);
     setDate(f.date);
+    setSearchOpen(false);
     handleSearch(f.flightNumber, f.date);
   }
 
@@ -167,28 +180,38 @@ function App() {
         )}
       </div>
 
-      <div className="search-bar">
-        <input
-          type="text"
-          placeholder="Flight number e.g. EK123"
-          value={flightNumber}
-          onChange={(e) => setFlightNumber(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="search-input"
-        />
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="search-input"
-        />
-        <button onClick={() => handleSearch()} className="search-button" disabled={loading}>
-          {loading ? "Searching" : "Search"}
-        </button>
-      </div>
+      {flight && <Hero flight={flight} />}
 
-      {recent.length > 0 && (
+      {!searchOpen && (
+        <button className="search-toggle" onClick={() => setSearchOpen(true)}>
+          + Search another flight
+        </button>
+      )}
+
+      {searchOpen && (
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Flight number e.g. EK123"
+            value={flightNumber}
+            onChange={(e) => setFlightNumber(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="search-input"
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="search-input"
+          />
+          <button onClick={() => handleSearch()} className="search-button" disabled={loading}>
+            {loading ? "Searching" : "Search"}
+          </button>
+        </div>
+      )}
+
+      {recent.length > 0 && searchOpen && (
         <div className="recent-chips">
           {recent.map((r, i) => (
             <button key={i} className="recent-chip" onClick={() => handleSelectRecent(r)}>
