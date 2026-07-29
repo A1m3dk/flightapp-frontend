@@ -1,40 +1,5 @@
-const KEY = "flightapp_tracked_flights";
 const RECENT_KEY = "flightapp_recent_searches";
-
-export function getTrackedFlights() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    return [];
-  }
-}
-
-export function saveTrackedFlights(list) {
-  localStorage.setItem(KEY, JSON.stringify(list));
-}
-
-export function addTrackedFlight(flight) {
-  const list = getTrackedFlights();
-  if (list.find((f) => f.id === flight.id)) return list;
-  const newList = list.concat([flight]);
-  saveTrackedFlights(newList);
-  return newList;
-}
-
-export function removeTrackedFlight(id) {
-  const list = getTrackedFlights().filter((f) => f.id !== id);
-  saveTrackedFlights(list);
-  return list;
-}
-
-export function updateTrackedFlight(id, updates) {
-  const list = getTrackedFlights().map((f) =>
-    f.id === id ? Object.assign({}, f, updates) : f
-  );
-  saveTrackedFlights(list);
-  return list;
-}
+const BACKEND_URL = "https://flightapp-w6ob.onrender.com";
 
 export function getRecentSearches() {
   try {
@@ -53,4 +18,27 @@ export function addRecentSearch(flightNumber, date) {
   const trimmed = list.slice(0, 5);
   localStorage.setItem(RECENT_KEY, JSON.stringify(trimmed));
   return trimmed;
+}
+
+export async function getTrackedFlights(deviceId) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/tracked/" + deviceId);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function addTrackedFlight(deviceId, flightNumber, date, route) {
+  const res = await fetch(BACKEND_URL + "/api/tracked", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscriptionId: deviceId, flightNumber, date, route }),
+  });
+  return await res.json();
+}
+
+export async function removeTrackedFlight(id) {
+  await fetch(BACKEND_URL + "/api/tracked/" + id, { method: "DELETE" });
 }

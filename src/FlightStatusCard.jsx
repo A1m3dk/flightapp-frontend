@@ -4,6 +4,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
   const [copiedField, setCopiedField] = useState(null);
   const [countdown, setCountdown] = useState("");
   const [checkinStatus, setCheckinStatus] = useState("");
+  const [phase, setPhase] = useState("");
   const [depWeather, setDepWeather] = useState(null);
   const [arrForecast, setArrForecast] = useState(null);
 
@@ -12,34 +13,59 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
   const aircraft = flight?.aircraft;
 
   useEffect(() => {
-    if (!dep?.scheduledTime?.local) return;
+    const statusPhase = getStatusPhase(flight?.status);
+
+    if (statusPhase === "AIRBORNE" || statusPhase === "ARRIVED" || statusPhase === "CANCELLED") {
+      setPhase(statusPhase);
+      setCountdown("");
+      setCheckinStatus("");
+      return;
+    }
+
+    if (!dep?.scheduledTime?.local) {
+      setPhase(statusPhase);
+      return;
+    }
+
     const target = new Date(dep.scheduledTime.local);
 
     function tick() {
       const diffMs = target - new Date();
+      const totalMinsRemaining = diffMs / 60000;
+
       if (diffMs <= 0) {
         setCountdown("");
         setCheckinStatus("");
+        setPhase(totalMinsRemaining > -60 ? "BOARDING" : statusPhase);
         return;
       }
+
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       setCountdown(hours + "h " + mins + "m");
 
-      const totalMinsRemaining = diffMs / 60000;
-      if (totalMinsRemaining <= 60) {
+      if (totalMinsRemaining <= 15) {
         setCheckinStatus("closed");
+        setPhase("BOARDING");
+      } else if (totalMinsRemaining <= 45) {
+        setCheckinStatus("closed");
+        setPhase("BOARDING");
+      } else if (totalMinsRemaining <= 60) {
+        setCheckinStatus("closed");
+        setPhase("NOT DEPARTED");
       } else if (totalMinsRemaining <= 24 * 60) {
         setCheckinStatus("open");
+        setPhase("NOT DEPARTED");
       } else {
         setCheckinStatus("");
+        setPhase("NOT DEPARTED");
       }
     }
 
     tick();
     const interval = setInterval(tick, 30000);
     return () => clearInterval(interval);
-  }, [dep?.scheduledTime?.local]);
+  }, [dep?.scheduledTime?.local, flight?.status]);
 
   useEffect(() => {
     async function loadWeather() {
@@ -74,7 +100,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
       (dep?.airport?.name || "") + " -> " + (arr?.airport?.name || "") + "\n" +
       "Departure: " + formatTime(dep?.scheduledTime?.local) + "\n" +
       "Gate: " + (dep?.gate || "N/A") + " | Terminal: " + (dep?.terminal || "N/A") + "\n" +
-      "Status: " + getPhaseLabel(flight.status);
+      "Status: " + phase;
 
     if (navigator.share) {
       navigator.share({ title: flight.number + " flight status", text: summary }).catch(() => {});
@@ -86,13 +112,11 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
   return (
     <div className="panel">
       <div className="phase-row">
-        <span className={"flight-phase " + getPhaseClass(flight.status)}>
-          {getPhaseLabel(flight.status)}
-        </span>
-        {countdown && getPhaseLabel(flight.status) === "NOT DEPARTED" && (
+        <span className={"flight-phase " + getPhaseClass(phase)}>{phase}</span>
+        {countdown && (phase === "NOT DEPARTED" || phase === "BOARDING") && (
           <span className="countdown-badge">Departs in {countdown}</span>
         )}
-        {checkinStatus && getPhaseLabel(flight.status) === "NOT DEPARTED" && (
+        {checkinStatus && (phase === "NOT DEPARTED" || phase === "BOARDING") && (
           <span className={"checkin-badge checkin-" + checkinStatus}>
             {checkinStatus === "open" ? "Check-in open" : "Check-in closed"}
           </span>
@@ -244,21 +268,30 @@ function weatherCodeLabel(code) {
   return "";
 }
 
-function getPhaseLabel(status) {
+function getStatusPhase(status) {
   const s = (status || "").toLowerCase();
   if (s.includes("enroute") || s.includes("approach") || s.includes("diverted")) return "AIRBORNE";
   if (s.includes("landed") || s.includes("arrived")) return "ARRIVED";
   if (s.includes("cancel")) return "CANCELLED";
-  if (s.includes("expected") || s.includes("scheduled") || s.includes("unknown")) return "NOT DEPARTED";
-  return status ? status.toUpperCase() : "UNKNOWN";
+  return "NOT DEPARTED";
 }
 
-function getPhaseClass(status) {
-  const s = (status || "").toLowerCase();
-  if (s.includes("enroute") || s.includes("approach") || s.includes("diverted")) return "phase-airborne";
-  if (s.includes("landed") || s.includes("arrived")) return "phase-arrived";
-  if (s.includes("cancel")) return "phase-cancelled";
+function getPhaseClass(phase) {
+  if (phase === "AIRBORNE") return "phase-airborne";
+  if (phase === "ARRIVED") return "phase-arrived";
+  if (phase === "CANCELLED") return "phase-cancelled";
+  if (phase === "BOARDING") return "phase-boarding";
   return "phase-notdeparted";
+}
+
+function getDelayMinutes(leg) {
+  if (!leg) return 0;
+  const scheduled = leg.scheduledTime?.local;
+  const actual = leg.actualTime?.local || leg.predictedTime?.local;
+  if (!scheduled || !actual) return 0;
+  const diffMs = new Date(actual) - new Date(scheduled);
+  const diffMin = Math.round(diffMs / 60000);
+  return diffMin > 0 ? diffMin : 0;
 }
 
 function getFlightDuration(dep, arr) {
@@ -295,22 +328,13 @@ function getTimezoneDiff(dep, arr) {
   return sign + diff + "h vs departure";
 }
 
-function getUtcOffsetHours(localStr, utcStr) {
+function getUtcOffsetHours(localStr) {
   const match = localStr.match(/([+-]\d{2}):(\d{2})$/);
   if (!match) return null;
   const sign = match[1][0] === "-" ? -1 : 1;
   const hours = parseInt(match[1].slice(1), 10);
   const mins = parseInt(match[2], 10);
   return sign * (hours + mins / 60);
-}
-function getDelayMinutes(leg) {
-  if (!leg) return 0;
-  const scheduled = leg.scheduledTime?.local;
-  const actual = leg.actualTime?.local || leg.predictedTime?.local;
-  if (!scheduled || !actual) return 0;
-  const diffMs = new Date(actual) - new Date(scheduled);
-  const diffMin = Math.round(diffMs / 60000);
-  return diffMin > 0 ? diffMin : 0;
 }
 
 function formatAge(aircraftInfo) {
