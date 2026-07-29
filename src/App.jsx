@@ -13,12 +13,13 @@ import {
   addTrackedFlight,
   removeTrackedFlight,
 } from "./storage";
-import { setupPushNotifications, getDeviceIdSync } from "./push";
+import { setupPushNotifications, disablePushNotifications, checkPushStatus, getDeviceIdSync } from "./push";
 import FlightStatusCard from "./FlightStatusCard";
 import FlightMap from "./FlightMap";
 import AtcLinks from "./AtcLinks";
 import TrackedFlights from "./TrackedFlights";
 import FlightTimeline from "./FlightTimeline";
+import Settings from "./Settings";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -38,12 +39,14 @@ function App() {
   const [lastFetchedAt, setLastFetchedAt] = useState(null);
   const [deviceId, setDeviceId] = useState(null);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     setRecent(getRecentSearches());
     const id = getDeviceIdSync();
     setDeviceId(id);
     refreshTracked(id);
+    checkPushStatus().then(setPushEnabled);
   }, []);
 
   async function refreshTracked(id) {
@@ -58,6 +61,15 @@ function App() {
       refreshTracked(id);
     } else {
       alert("Notifications permission is needed for background flight alerts. Please allow notifications and try again.");
+    }
+  }
+
+  async function handleTogglePush() {
+    if (pushEnabled) {
+      await disablePushNotifications();
+      setPushEnabled(false);
+    } else {
+      await enablePush();
     }
   }
 
@@ -144,14 +156,16 @@ function App() {
     <div className="app-shell">
       <div className="app-header">
         <h1 className="app-title">FLIGHTAPP</h1>
+        <button className="settings-gear" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
       </div>
-      <p className="app-subtitle">Personal Flight Ops Tracker</p>
-
-      {!pushEnabled && (
-        <button className="enable-push-button" onClick={enablePush}>
-          Enable background flight alerts
-        </button>
-      )}
+      <div className="subtitle-row">
+        <p className="app-subtitle">Personal Flight Ops Tracker</p>
+        {!pushEnabled && (
+          <button className="enable-push-pill" onClick={enablePush}>
+            Enable background alerts
+          </button>
+        )}
+      </div>
 
       <div className="search-bar">
         <input
@@ -231,6 +245,13 @@ function App() {
       )}
 
       <p className="app-footer">Beta 3.00 — Made by A1m3dk</p>
+
+      <Settings
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        pushEnabled={pushEnabled}
+        onTogglePush={handleTogglePush}
+      />
     </div>
   );
 }
