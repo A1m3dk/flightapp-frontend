@@ -62,3 +62,31 @@ export async function setupPushNotifications() {
 export function getDeviceIdSync() {
   return getDeviceId();
 }
+
+export async function checkPushStatus() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/sw-push.js");
+    if (!registration) return false;
+    const subscription = await registration.pushManager.getSubscription();
+    return subscription != null;
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function disablePushNotifications() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/sw-push.js");
+    if (!registration) return;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      await subscription.unsubscribe();
+    }
+    const deviceId = getDeviceId();
+    await fetch(BACKEND_URL + "/api/push-subscribe/" + deviceId, { method: "DELETE" });
+  } catch (err) {
+    console.log("Disable push failed:", err.message);
+  }
+}
