@@ -40,7 +40,7 @@ export async function fetchLivePosition(callsign) {
 
 export async function fetchAirportStats(icao) {
   try {
-    const res = await fetch(BACKEND_URL + "/api/airport-stats/" + icao);
+    const res = await fetch(BACKEND_URL + "/api/airport-stats/" + icao, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch (err) {
@@ -50,7 +50,7 @@ export async function fetchAirportStats(icao) {
 
 export async function fetchAircraftHistory(reg, date) {
   try {
-    const res = await fetch(BACKEND_URL + "/api/aircraft-history/" + reg + "/" + date);
+    const res = await fetch(BACKEND_URL + "/api/aircraft-history/" + reg + "/" + date, { cache: "no-store" });
     if (!res.ok) return [];
     return await res.json();
   } catch (err) {
@@ -60,7 +60,7 @@ export async function fetchAircraftHistory(reg, date) {
 
 export async function fetchLivePositionByHex(hex) {
   try {
-    const res = await fetch(BACKEND_URL + "/api/live-position-hex/" + hex);
+    const res = await fetch(BACKEND_URL + "/api/live-position-hex/" + hex, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch (err) {
