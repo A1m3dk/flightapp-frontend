@@ -282,7 +282,7 @@ function App() {
         </>
       )}
 
-      <p className="app-footer">Beta 3.00 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 6.12 — Made by A1m3dk</p>
 
       <Settings
         open={settingsOpen}
