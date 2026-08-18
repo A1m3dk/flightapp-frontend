@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import "./App.css";
+import AirportDisruptions from "./AirportDisruptions";
+import AircraftEvents from "./AircraftEvents";
+import AirlineInfo from "./AirlineInfo";
 import {
   fetchFlightStatus,
   fetchAircraftPhoto,
@@ -254,6 +257,18 @@ function App() {
             {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
           </button>
 
+          <AircraftEvents
+            reg={flight.aircraft?.reg}
+            modeS={flight.aircraft?.modeS}
+            date={date}
+            currentFlightNumber={flight.number}
+          />
+
+          <AirlineInfo airline={flight.airline} />
+
+          <AirportDisruptions icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
+          <AirportDisruptions icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
+          
           <div className="panel">
             <p className="section-heading">Live Position</p>
             <FlightMap position={position} />

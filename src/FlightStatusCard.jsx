@@ -207,6 +207,10 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
           <p><strong>Type:</strong> {aircraft?.model || "Unknown type"}</p>
           <p><strong>Registration:</strong> {aircraft?.reg || "N/A"}</p>
           <p><strong>Age:</strong> {formatAge(aircraftInfo)}</p>
+          {aircraftInfo?.numSeats && <p><strong>Seats:</strong> {aircraftInfo.numSeats}</p>}
+          {aircraftInfo?.numEngines && <p><strong>Engines:</strong> {aircraftInfo.numEngines} {aircraftInfo.engineType ? "(" + aircraftInfo.engineType + ")" : ""}</p>}
+          {aircraftInfo?.serial && <p><strong>Serial (MSN):</strong> {aircraftInfo.serial}</p>}
+          {aircraftInfo?.isFreighter != null && <p><strong>Freighter:</strong> {aircraftInfo.isFreighter ? "Yes" : "No"}</p>}
         </div>
       </div>
 

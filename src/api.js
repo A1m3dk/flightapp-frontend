@@ -38,6 +38,36 @@ export async function fetchLivePosition(callsign) {
   }
 }
 
+export async function fetchAirportStats(icao) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/airport-stats/" + icao);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function fetchAircraftHistory(reg, date) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/aircraft-history/" + reg + "/" + date);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function fetchLivePositionByHex(hex) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/live-position-hex/" + hex);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
 export function getLiveAtcUrl(icao) {
   return "https://www.liveatc.net/search/?icao=" + icao;
 }
