@@ -1235,3 +1235,58 @@ body {
 .airline-btn:visited {
   color: #1a1206 !important;
 }
+
+.otp-row {
+  display: flex !important;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.otp-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50% !important;
+  border: 4px solid var(--border);
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--panel-raised);
+}
+
+.otp-circle.otp-good { border-color: var(--green) !important; }
+.otp-circle.otp-fair { border-color: var(--amber) !important; }
+.otp-circle.otp-poor { border-color: var(--red) !important; }
+
+.otp-percent {
+  font-family: var(--mono) !important;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text) !important;
+}
+
+.otp-label {
+  font-family: var(--mono) !important;
+  font-size: 0.6rem;
+  color: var(--text-dim) !important;
+}
+
+.otp-stats {
+  flex: 1;
+  min-width: 160px;
+}
+
+.otp-stat-line {
+  display: flex !important;
+  justify-content: space-between;
+  font-family: var(--mono) !important;
+  font-size: 0.75rem;
+  color: var(--text-dim) !important;
+  margin: 0.25rem 0;
+}
+
+.otp-stat-line span:last-child {
+  color: var(--text) !important;
+}
