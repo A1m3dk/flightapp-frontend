@@ -300,8 +300,8 @@ function App() {
                 currentFlightNumber={flight.number}
               />
               <AirlineInfo airline={flight.airline} />
-              <AirportDisruptions icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
-              <AirportDisruptions icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
+              <AirportDisruptions icao={flight.departure?.airport?.iata} label={flight.departure?.airport?.iata} />
+              <AirportDisruptions icao={flight.arrival?.airport?.iata} label={flight.arrival?.airport?.iata} />
             </>
           )}
         </>
