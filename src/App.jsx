@@ -21,10 +21,15 @@ import TrackedFlights from "./TrackedFlights";
 import FlightTimeline from "./FlightTimeline";
 import Settings from "./Settings";
 import Hero from "./Hero";
+import AirportDisruptions from "./AirportDisruptions";
+import AircraftEvents from "./AircraftEvents";
+import AirlineInfo from "./AirlineInfo";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
+
+const TABS = ["Flight", "Timeline", "Live", "More"];
 
 function App() {
   const [flightNumber, setFlightNumber] = useState("");
@@ -43,6 +48,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(true);
   const [autoLoaded, setAutoLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState("Flight");
 
   useEffect(() => {
     setRecent(getRecentSearches());
@@ -96,6 +102,7 @@ function App() {
     setAircraftPhoto(null);
     setAircraftInfo(null);
     setPosition(null);
+    setActiveTab("Flight");
 
     try {
       const data = await fetchFlightStatus(numberToUse, dateToUse);
@@ -238,36 +245,69 @@ function App() {
 
       {flight && !loading && (
         <>
-          <FlightStatusCard
-            flight={flight}
-            aircraftPhoto={aircraftPhoto}
-            aircraftInfo={aircraftInfo}
-            lastFetchedAt={lastFetchedAt}
-          />
-
-          <FlightTimeline flight={flight} />
-
-          <button
-            className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
-            onClick={handleTrackToggle}
-          >
-            {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
-          </button>
-
-          <div className="panel">
-            <p className="section-heading">Live Position</p>
-            <FlightMap position={position} />
+          <div className="tab-bar">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                className={"tab-button " + (activeTab === tab ? "tab-active" : "")}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <div className="panel">
-            <AtcLinks
-              departureIcao={flight.departure?.airport?.icao}
-              arrivalIcao={flight.arrival?.airport?.icao}
-            />
-          </div>
+
+          {activeTab === "Flight" && (
+            <>
+              <FlightStatusCard
+                flight={flight}
+                aircraftPhoto={aircraftPhoto}
+                aircraftInfo={aircraftInfo}
+                lastFetchedAt={lastFetchedAt}
+              />
+              <button
+                className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
+                onClick={handleTrackToggle}
+              >
+                {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
+              </button>
+            </>
+          )}
+
+          {activeTab === "Timeline" && <FlightTimeline flight={flight} />}
+
+          {activeTab === "Live" && (
+            <>
+              <div className="panel">
+                <p className="section-heading">Live Position</p>
+                <FlightMap position={position} />
+              </div>
+              <div className="panel">
+                <AtcLinks
+                  departureIcao={flight.departure?.airport?.icao}
+                  arrivalIcao={flight.arrival?.airport?.icao}
+                />
+              </div>
+            </>
+          )}
+
+          {activeTab === "More" && (
+            <>
+              <AircraftEvents
+                reg={flight.aircraft?.reg}
+                modeS={flight.aircraft?.modeS}
+                date={date}
+                currentFlightNumber={flight.number}
+              />
+              <AirlineInfo airline={flight.airline} />
+              <AirportDisruptions icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
+              <AirportDisruptions icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
+            </>
+          )}
         </>
       )}
 
-      <p className="app-footer">Beta 3.00 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 4.00 — Made by A1m3dk</p>
 
       <Settings
         open={settingsOpen}
