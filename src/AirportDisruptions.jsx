@@ -8,7 +8,7 @@ function AirportDisruptions({ icao, label }) {
   useEffect(() => {
     if (!icao) return;
     setLoaded(false);
-    fetchAirportStats(icao).then((s) => {
+    fetchAirportStats(icao).then(function (s) {
       setStats(s);
       setLoaded(true);
     });
@@ -16,16 +16,20 @@ function AirportDisruptions({ icao, label }) {
 
   if (!icao) return null;
 
-  const otpClass =
-    stats?.otpPercent >= 80 ? "otp-good" : stats?.otpPercent >= 60 ? "otp-fair" : "otp-poor";
+  let otpClass = "otp-poor";
+  if (stats && stats.otpPercent >= 80) otpClass = "otp-good";
+  else if (stats && stats.otpPercent >= 60) otpClass = "otp-fair";
 
   return (
     <div className="panel">
-      <p className="section-heading">{label || icao} · Airport Performance (±3hrs)</p>
+      <p className="section-heading">{label || icao} &middot; Airport Performance (&plusmn;3hrs)</p>
+
       {!loaded && <p className="no-data-msg">Loading airport performance...</p>}
+
       {loaded && (!stats || stats.totalFlights === 0) && (
         <p className="no-data-msg">No recent departure data available for this airport right now.</p>
       )}
+
       {loaded && stats && stats.totalFlights > 0 && (
         <div className="otp-row">
           <div className={"otp-circle " + otpClass}>
@@ -33,12 +37,27 @@ function AirportDisruptions({ icao, label }) {
             <span className="otp-label">On time</span>
           </div>
           <div className="otp-stats">
-            <p className="otp-stat-line"><span>Departures tracked</span><span>{stats.totalFlights}</span></p>
-            <p className="otp-stat-line"><span>On time</span><span>{stats.onTime}</span></p>
-            <p className="otp-stat-line"><span>Delayed</span><span>{stats.delayed}</span></p>
-            <p className="otp-stat-line"><span>Cancelled</span><span>{stats.cancelled}</span></p>
+            <p className="otp-stat-line">
+              <span>Departures tracked</span>
+              <span>{stats.totalFlights}</span>
+            </p>
+            <p className="otp-stat-line">
+              <span>On time</span>
+              <span>{stats.onTime}</span>
+            </p>
+            <p className="otp-stat-line">
+              <span>Delayed</span>
+              <span>{stats.delayed}</span>
+            </p>
+            <p className="otp-stat-line">
+              <span>Cancelled</span>
+              <span>{stats.cancelled}</span>
+            </p>
             {stats.avgDelayMin > 0 && (
-              <p className="otp-stat-line"><span>Avg delay</span><span>{stats.avgDelayMin} min</span></p>
+              <p className="otp-stat-line">
+                <span>Avg delay</span>
+                <span>{stats.avgDelayMin} min</span>
+              </p>
             )}
           </div>
         </div>
