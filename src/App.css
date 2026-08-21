@@ -1172,3 +1172,66 @@ body {
     padding: 0.5rem 0.7rem;
   }
 }
+
+.aircraft-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.aircraft-event-line {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text);
+  margin: 0;
+}
+
+.aircraft-event-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 0.5rem;
+}
+
+.airline-name {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  margin: 0 0 0.6rem;
+}
+
+.airline-codes {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.airline-code-item {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.airline-buttons {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.airline-btn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: #1a1206 !important;
+  background: var(--amber);
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  text-decoration: none !important;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.airline-btn:visited {
+  color: #1a1206 !important;
+}
