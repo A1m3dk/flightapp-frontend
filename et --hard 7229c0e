@@ -1,0 +1,49 @@
+[33m9b44c86[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix merge conflicts in frontend components
+[33m783c5a3[m add route search, offline caching, and 24h auto-untrack
+[33m3a897ae[m consolidate and clean up App.css, remove duplicates
+[33m7229c0e[m i think i fixed it
+[33mdd49c4b[m use IATA code for airport stats requests
+[33m23b5273[m restore missing CSS for airline buttons and aircraft events, fix visited link styling
+[33m8d72224[m this is probably broken
+[33m7f162e4[m restructure into tabbed sections to reduce clutter
+[33m395657b[m version update
+[33ma1e9fa0[m full UI polish pass: motion, hierarchy, consistent buttons and panels
+[33mc06b257[m disable browser caching on stats endpoints to fix 304 false-negative bug
+[33m17d6140[m always render aircraft events and airport disruptions panels with fallback messaging
+[33mcdd6af8[m add airport disruptions/OTP, aircraft events, airline info, expanded aircraft details
+[33m7aa9004[m fix service worker scope lookup in push status check
+[33m554fdaa[m clean rewrite of App.jsx with hero home screen
+[33m6ca85c0[m fix Settings.jsx filename casing
+[33m9179670[m add settings panel with push toggle
+[33mf921749[m add settings panel with push toggle
+[33m5ea0f92[m add settings panel with push toggle
+[33m6d31bcb[m fix App.jsx full replace
+[33m309365c[m move to server-side push notifications and persistent tracked flights
+[33mc74c961[m add boarding phase and expanded notification triggers
+[33m3fc77c9[m add boarding phase and expanded notification triggers
+[33m0e34010[m version update
+[33m6c2c2f9[m auto-update service worker on new deploys
+[33m6dd5e53[m match checkin badge styling to countdown badge
+[33m05a37d6[m add check-in status indicator
+[33m6eed928[m match date input styling, add spacing around flight title
+[33me89d644[m fix date input overflow on mobile
+[33mf8fdf2a[m fix date input overflow on mobile
+[33med6afd7[m add mobile responsive breakpoints
+[33m8d9678a[m version update
+[33m0d903ea[m fix flight duration date parsing
+[33m2480816[m add flight duration and timezone diff to main card
+[33m63d300c[m add timezone display, arrival forecast, detailed timetable
+[33m3b7c6f0[m route aircraft photos through image proxy
+[33m3f548bf[m update aircraft photo field mapping
+[33m56a4274[m make flight card load instantly, secondary data async
+[33m1bb3aea[m add no-photo placeholder
+[33m3c9b090[m version update
+[33m15cf8f4[m little features
+[33mb4e52d0[m flight status indicator
+[33m3b80060[m fix css filename casing
+[33m7bec3f6[m add flight phase indicator
+[33m5b9eb6e[m route live position through backend
+[33mf6efd44[m add live position proxy route
+[33m9730063[m point to live backend
+[33mff914fd[m add footer
+[33mf8ae725[m inital frontend
