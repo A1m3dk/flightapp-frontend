@@ -38,9 +38,9 @@ export async function fetchLivePosition(callsign) {
   }
 }
 
-export async function fetchAirportStats(icao) {
+export async function fetchAirportStats(iata) {
   try {
-    const res = await fetch(BACKEND_URL + "/api/airport-stats/" + icao, { cache: "no-store" });
+    const res = await fetch(BACKEND_URL + "/api/airport-stats/" + iata, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch (err) {
