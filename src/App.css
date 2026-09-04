@@ -1465,3 +1465,84 @@ body {
     margin-top: 0.75rem;
   }
 }
+
+.offline-banner {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--amber);
+  background: rgba(255, 180, 84, 0.1);
+  border: 1px solid var(--amber-dim);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.cached-note {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin: -0.6rem 0 0.8rem;
+}
+
+.search-toggle-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.route-toggle {
+  margin-top: 0.6rem;
+}
+
+.route-panel {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.route-inputs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.route-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.route-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  font-family: var(--mono);
+  color: var(--text);
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.route-result-item:hover {
+  border-color: var(--amber-dim);
+}
+
+.route-result-number { font-weight: 600; font-size: 0.85rem; }
+.route-result-airline { font-size: 0.72rem; color: var(--text-dim); flex: 1; }
+.route-result-time { font-size: 0.78rem; color: var(--amber); }
+.route-result-aircraft { font-size: 0.68rem; color: var(--text-dim); }
+
+.track-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 600px) {
+  .route-inputs { flex-direction: column; }
+  .route-result-item { flex-wrap: wrap; }
+}

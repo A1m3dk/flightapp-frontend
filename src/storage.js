@@ -42,3 +42,36 @@ export async function addTrackedFlight(deviceId, flightNumber, date, route) {
 export async function removeTrackedFlight(id) {
   await fetch(BACKEND_URL + "/api/tracked/" + id, { method: "DELETE" });
 }
+
+const CACHE_TRACKED_KEY = "flightapp_cached_tracked";
+const CACHE_FLIGHT_PREFIX = "flightapp_cached_flight_";
+
+export function cacheTrackedFlights(list) {
+  try {
+    localStorage.setItem(CACHE_TRACKED_KEY, JSON.stringify(list));
+  } catch (err) {}
+}
+
+export function getCachedTrackedFlights() {
+  try {
+    const raw = localStorage.getItem(CACHE_TRACKED_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export function cacheFlightData(key, data) {
+  try {
+    localStorage.setItem(CACHE_FLIGHT_PREFIX + key, JSON.stringify(data));
+  } catch (err) {}
+}
+
+export function getCachedFlightData(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_FLIGHT_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}

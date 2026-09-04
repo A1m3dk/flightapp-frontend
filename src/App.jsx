@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
 import "./App.css";
-import AirportDisruptions from "./AirportDisruptions";
-import AircraftEvents from "./AircraftEvents";
-import AirlineInfo from "./AirlineInfo";
 import {
   fetchFlightStatus,
   fetchAircraftPhoto,
@@ -15,6 +12,10 @@ import {
   getTrackedFlights,
   addTrackedFlight,
   removeTrackedFlight,
+  cacheTrackedFlights,
+  getCachedTrackedFlights,
+  cacheFlightData,
+  getCachedFlightData,
 } from "./storage";
 import { setupPushNotifications, disablePushNotifications, checkPushStatus, getDeviceIdSync } from "./push";
 import FlightStatusCard from "./FlightStatusCard";
@@ -24,10 +25,16 @@ import TrackedFlights from "./TrackedFlights";
 import FlightTimeline from "./FlightTimeline";
 import Settings from "./Settings";
 import Hero from "./Hero";
+import AirportDisruptions from "./AirportDisruptions";
+import AircraftEvents from "./AircraftEvents";
+import AirlineInfo from "./AirlineInfo";
+import RouteSearch from "./RouteSearch";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
+
+const TABS = ["Flight", "Timeline", "Live", "More"];
 
 function App() {
   const [flightNumber, setFlightNumber] = useState("");
@@ -46,6 +53,10 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(true);
   const [autoLoaded, setAutoLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState("Flight");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [routeSearchOpen, setRouteSearchOpen] = useState(false);
+  const [viewingCached, setViewingCached] = useState(false);
 
   useEffect(() => {
     setRecent(getRecentSearches());
@@ -53,6 +64,15 @@ function App() {
     setDeviceId(id);
     refreshTracked(id);
     checkPushStatus().then(setPushEnabled);
+
+    function goOnline() { setIsOnline(true); }
+    function goOffline() { setIsOnline(false); }
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
   }, []);
 
   useEffect(() => {
@@ -65,8 +85,17 @@ function App() {
   }, [tracked, autoLoaded]);
 
   async function refreshTracked(id) {
-    const list = await getTrackedFlights(id);
-    setTracked(list);
+    if (!navigator.onLine) {
+      setTracked(getCachedTrackedFlights());
+      return;
+    }
+    try {
+      const list = await getTrackedFlights(id);
+      setTracked(list);
+      cacheTrackedFlights(list);
+    } catch (err) {
+      setTracked(getCachedTrackedFlights());
+    }
   }
 
   async function enablePush() {
@@ -93,18 +122,35 @@ function App() {
     const dateToUse = overrideDate || date;
     if (!numberToUse || !dateToUse) return;
 
+    const cacheKey = numberToUse.replace(/\s/g, "").toUpperCase() + "_" + dateToUse;
+
     setLoading(true);
     setError("");
     setFlight(null);
     setAircraftPhoto(null);
     setAircraftInfo(null);
     setPosition(null);
+    setActiveTab("Flight");
+    setViewingCached(false);
+
+    if (!navigator.onLine) {
+      const cached = getCachedFlightData(cacheKey);
+      setLoading(false);
+      if (cached) {
+        setFlight(cached);
+        setViewingCached(true);
+      } else {
+        setError("You're offline and this flight isn't cached yet.");
+      }
+      return;
+    }
 
     try {
       const data = await fetchFlightStatus(numberToUse, dateToUse);
       setFlight(data);
       setLastFetchedAt(new Date());
       setLoading(false);
+      cacheFlightData(cacheKey, data);
 
       const updatedRecent = addRecentSearch(numberToUse, dateToUse);
       setRecent(updatedRecent);
@@ -168,6 +214,14 @@ function App() {
     handleSearch(r.flightNumber, r.date);
   }
 
+  function handleRoutePick(number, pickedDate) {
+    setFlightNumber(number);
+    setDate(pickedDate);
+    setRouteSearchOpen(false);
+    setSearchOpen(false);
+    handleSearch(number, pickedDate);
+  }
+
   return (
     <div className="app-shell">
       <div className="app-header">
@@ -183,12 +237,25 @@ function App() {
         )}
       </div>
 
+      {!isOnline && (
+        <p className="offline-banner">You're offline — showing cached data where available.</p>
+      )}
+
       {flight && <Hero flight={flight} />}
 
+      {viewingCached && (
+        <p className="cached-note">Showing last known data (offline).</p>
+      )}
+
       {!searchOpen && (
-        <button className="search-toggle" onClick={() => setSearchOpen(true)}>
-          + Search another flight
-        </button>
+        <div className="search-toggle-row">
+          <button className="search-toggle" onClick={() => setSearchOpen(true)}>
+            + Search another flight
+          </button>
+          <button className="search-toggle" onClick={() => setRouteSearchOpen(true)}>
+            Find by route
+          </button>
+        </div>
       )}
 
       {searchOpen && (
@@ -212,6 +279,12 @@ function App() {
             {loading ? "Searching" : "Search"}
           </button>
         </div>
+      )}
+
+      {searchOpen && (
+        <button className="search-toggle route-toggle" onClick={() => setRouteSearchOpen(true)}>
+          Find flights by route instead
+        </button>
       )}
 
       {recent.length > 0 && searchOpen && (
@@ -241,48 +314,86 @@ function App() {
 
       {flight && !loading && (
         <>
-          <FlightStatusCard
-            flight={flight}
-            aircraftPhoto={aircraftPhoto}
-            aircraftInfo={aircraftInfo}
-            lastFetchedAt={lastFetchedAt}
-          />
-
-          <FlightTimeline flight={flight} />
-
-          <button
-            className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
-            onClick={handleTrackToggle}
-          >
-            {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
-          </button>
-
-          <AircraftEvents
-            reg={flight.aircraft?.reg}
-            modeS={flight.aircraft?.modeS}
-            date={date}
-            currentFlightNumber={flight.number}
-          />
-
-          <AirlineInfo airline={flight.airline} />
-
-          <AirportDisruptions icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
-          <AirportDisruptions icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
-          
-          <div className="panel">
-            <p className="section-heading">Live Position</p>
-            <FlightMap position={position} />
+          <div className="tab-bar">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                className={"tab-button " + (activeTab === tab ? "tab-active" : "")}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <div className="panel">
-            <AtcLinks
-              departureIcao={flight.departure?.airport?.icao}
-              arrivalIcao={flight.arrival?.airport?.icao}
-            />
-          </div>
+
+          {activeTab === "Flight" && (
+            <>
+              <FlightStatusCard
+                flight={flight}
+                aircraftPhoto={aircraftPhoto}
+                aircraftInfo={aircraftInfo}
+                lastFetchedAt={lastFetchedAt}
+              />
+              <button
+                className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
+                onClick={handleTrackToggle}
+                disabled={!isOnline}
+              >
+                {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
+              </button>
+            </>
+          )}
+
+          {activeTab === "Timeline" && <FlightTimeline flight={flight} />}
+
+          {activeTab === "Live" && (
+            <>
+              {!isOnline ? (
+                <div className="panel">
+                  <p className="no-data-msg">Offline — go online to see live flight tracking.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="panel">
+                    <p className="section-heading">Live Position</p>
+                    <FlightMap position={position} />
+                  </div>
+                  <div className="panel">
+                    <AtcLinks
+                      departureIcao={flight.departure?.airport?.icao}
+                      arrivalIcao={flight.arrival?.airport?.icao}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {activeTab === "More" && (
+            <>
+              {!isOnline ? (
+                <div className="panel">
+                  <p className="no-data-msg">Offline — go online to see live flight tracking.</p>
+                </div>
+              ) : (
+                <>
+                  <AircraftEvents
+                    reg={flight.aircraft?.reg}
+                    modeS={flight.aircraft?.modeS}
+                    date={date}
+                    currentFlightNumber={flight.number}
+                  />
+                  <AirlineInfo airline={flight.airline} />
+                  <AirportDisruptions icao={flight.departure?.airport?.iata} label={flight.departure?.airport?.iata} />
+                  <AirportDisruptions icao={flight.arrival?.airport?.iata} label={flight.arrival?.airport?.iata} />
+                </>
+              )}
+            </>
+          )}
         </>
       )}
 
-      <p className="app-footer">Beta 6.12 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 5.00 — Made by A1m3dk</p>
 
       <Settings
         open={settingsOpen}
@@ -290,6 +401,10 @@ function App() {
         pushEnabled={pushEnabled}
         onTogglePush={handleTogglePush}
       />
+
+      {routeSearchOpen && (
+        <RouteSearch onPick={handleRoutePick} onClose={() => setRouteSearchOpen(false)} />
+      )}
     </div>
   );
 }

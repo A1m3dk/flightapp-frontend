@@ -71,3 +71,13 @@ export async function fetchLivePositionByHex(hex) {
 export function getLiveAtcUrl(icao) {
   return "https://www.liveatc.net/search/?icao=" + icao;
 }
+
+export async function fetchRouteSearch(depIata, arrIata, date) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/route-search/" + depIata + "/" + arrIata + "/" + date, { cache: "no-store" });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    return [];
+  }
+}
