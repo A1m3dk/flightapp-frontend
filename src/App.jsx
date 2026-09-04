@@ -262,3 +262,151 @@ function App() {
         <div className="search-bar">
           <input
             type="text"
+            placeholder="Flight number e.g. EK123"
+            value={flightNumber}
+            onChange={(e) => setFlightNumber(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="search-input"
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="search-input"
+          />
+          <button onClick={() => handleSearch()} className="search-button" disabled={loading}>
+            {loading ? "Searching" : "Search"}
+          </button>
+        </div>
+      )}
+
+      {searchOpen && (
+        <button className="search-toggle route-toggle" onClick={() => setRouteSearchOpen(true)}>
+          Find flights by route instead
+        </button>
+      )}
+
+      {recent.length > 0 && searchOpen && (
+        <div className="recent-chips">
+          {recent.map((r, i) => (
+            <button key={i} className="recent-chip" onClick={() => handleSelectRecent(r)}>
+              {r.flightNumber} · {r.date}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="error-msg">{error}</p>}
+
+      <TrackedFlights flights={tracked} onSelect={handleSelectTracked} onRemove={handleRemoveTracked} />
+
+      {loading && (
+        <div className="panel skeleton-panel">
+          <div className="skeleton-line skeleton-title"></div>
+          <div className="skeleton-line skeleton-sub"></div>
+          <div className="skeleton-grid">
+            <div className="skeleton-block"></div>
+            <div className="skeleton-block"></div>
+          </div>
+        </div>
+      )}
+
+      {flight && !loading && (
+        <>
+          <div className="tab-bar">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                className={"tab-button " + (activeTab === tab ? "tab-active" : "")}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "Flight" && (
+            <>
+              <FlightStatusCard
+                flight={flight}
+                aircraftPhoto={aircraftPhoto}
+                aircraftInfo={aircraftInfo}
+                lastFetchedAt={lastFetchedAt}
+              />
+              <button
+                className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
+                onClick={handleTrackToggle}
+                disabled={!isOnline}
+              >
+                {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
+              </button>
+            </>
+          )}
+
+          {activeTab === "Timeline" && <FlightTimeline flight={flight} />}
+
+          {activeTab === "Live" && (
+            <>
+              {!isOnline ? (
+                <div className="panel">
+                  <p className="no-data-msg">Offline — go online to see live flight tracking.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="panel">
+                    <p className="section-heading">Live Position</p>
+                    <FlightMap position={position} />
+                  </div>
+                  <div className="panel">
+                    <AtcLinks
+                      departureIcao={flight.departure?.airport?.icao}
+                      arrivalIcao={flight.arrival?.airport?.icao}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {activeTab === "More" && (
+            <>
+              {!isOnline ? (
+                <div className="panel">
+                  <p className="no-data-msg">Offline — go online to see live flight tracking.</p>
+                </div>
+              ) : (
+                <>
+                  <AircraftEvents
+                    reg={flight.aircraft?.reg}
+                    modeS={flight.aircraft?.modeS}
+                    date={date}
+                    currentFlightNumber={flight.number}
+                  />
+                  <AirlineInfo airline={flight.airline} />
+                  <AirportDisruptions icao={flight.departure?.airport?.iata} label={flight.departure?.airport?.iata} />
+                  <AirportDisruptions icao={flight.arrival?.airport?.iata} label={flight.arrival?.airport?.iata} />
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      <p className="app-footer">Beta 5.00 — Made by A1m3dk</p>
+
+      <Settings
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        pushEnabled={pushEnabled}
+        onTogglePush={handleTogglePush}
+      />
+
+      {routeSearchOpen && (
+        <RouteSearch onPick={handleRoutePick} onClose={() => setRouteSearchOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+export default App;
