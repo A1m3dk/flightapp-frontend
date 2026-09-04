@@ -149,21 +149,22 @@ function App() {
       const data = await fetchFlightStatus(numberToUse, dateToUse);
       setFlight(data);
       setLastFetchedAt(new Date());
-      setLoading(false);
       cacheFlightData(cacheKey, data);
 
       const updatedRecent = addRecentSearch(numberToUse, dateToUse);
       setRecent(updatedRecent);
 
       if (data.aircraft?.reg) {
-        fetchAircraftPhoto(data.aircraft.reg).then(setAircraftPhoto);
-        fetchAircraftInfo(data.aircraft.reg).then(setAircraftInfo);
+        fetchAircraftPhoto(data.aircraft.reg).then(setAircraftPhoto).catch(() => setAircraftPhoto(null));
+        fetchAircraftInfo(data.aircraft.reg).then(setAircraftInfo).catch(() => setAircraftInfo(null));
       }
 
       const callsign = data.callSign || numberToUse;
-      fetchLivePosition(callsign).then(setPosition);
+      fetchLivePosition(callsign).then(setPosition).catch(() => setPosition(null));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || "Flight look-up failed. Please try again.");
+      setFlight(null);
+    } finally {
       setLoading(false);
     }
   }
