@@ -620,10 +620,13 @@ body {
 
 .route-inputs {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.6rem;
   margin-bottom: 1rem;
+  position: relative;
 }
+
+.airport-field { position: relative; z-index: 5; }
 
 .route-results {
   display: flex;
