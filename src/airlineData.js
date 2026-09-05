@@ -13,6 +13,28 @@ const AIRLINES = {
   AA: { name: "American Airlines", website: "https://www.aa.com", twitter: "https://twitter.com/AmericanAir", instagram: "https://instagram.com/americanair", hub: "Dallas Fort Worth (DFW)" },
 };
 
+const ICAO_TO_NAME = {
+  THY: "Turkish Airlines",
+  UAE: "Emirates",
+  RBA: "Royal Brunei Airlines",
+  QTR: "Qatar Airways",
+  ETD: "Etihad Airways",
+  BAW: "British Airways",
+  AFR: "Air France",
+  DLH: "Lufthansa",
+  SIA: "Singapore Airlines",
+  DAL: "Delta Air Lines",
+  UAL: "United Airlines",
+  AAL: "American Airlines",
+  OMA: "Oman Air",
+};
+
 export function getAirlineInfo(iata) {
   return AIRLINES[iata] || null;
+}
+
+export function getAirlineNameFromCallsignPrefix(callsign) {
+  if (!callsign) return null;
+  const prefix = callsign.replace(/[0-9\s]/g, "").slice(0, 3).toUpperCase();
+  return ICAO_TO_NAME[prefix] || null;
 }

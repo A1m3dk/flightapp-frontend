@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getAirlineNameFromCallsignPrefix } from "./airlineData";
 
 function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }) {
   const [copiedField, setCopiedField] = useState(null);
@@ -127,6 +128,9 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
         <h2 className="flight-title">
           {flight.airline?.name} {flight.number}
         </h2>
+        {flight.codeshareStatus === "IsCodeshared" && (
+          <span className="codeshare-badge">Codeshare</span>
+        )}
         <button className="icon-button" onClick={() => copyToClipboard(flight.number, "number")} title="Copy flight number">
           {copiedField === "number" ? "Copied" : "Copy"}
         </button>
@@ -134,6 +138,11 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
           {copiedField === "share" ? "Copied" : "Share"}
         </button>
       </div>
+            {flight.codeshareStatus === "IsCodeshared" && getAirlineNameFromCallsignPrefix(flight.callSign) && getAirlineNameFromCallsignPrefix(flight.callSign) !== flight.airline?.name && (
+        <p className="codeshare-note">
+          Marketed as {flight.airline?.name} {flight.number} &middot; likely operated by {getAirlineNameFromCallsignPrefix(flight.callSign)} (inferred from callsign)
+        </p>
+      )}
 
       <p className="flight-route">
         {dep?.airport?.name} ({dep?.airport?.icao}) &rarr; {arr?.airport?.name} ({arr?.airport?.icao})
