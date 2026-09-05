@@ -665,3 +665,44 @@ body {
   .route-inputs { flex-direction: column; }
   .route-result-item { flex-wrap: wrap; }
 }
+
+.airport-field {
+  position: relative;
+  flex: 1;
+  min-width: 140px;
+}
+
+.airport-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  margin-top: 0.3rem;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.airport-option {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--mono);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.airport-option:last-child { border-bottom: none; }
+.airport-option:hover { background: var(--panel-raised); }
+
+.airport-option-code { color: var(--amber); font-size: 0.8rem; font-weight: 600; }
+.airport-option-name { font-size: 0.72rem; color: var(--text-dim); }

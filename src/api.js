@@ -94,3 +94,13 @@ export async function fetchRouteSearch(depIata, arrIata, date) {
     return [];
   }
 }
+
+export async function fetchAirportSearch(term) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/airport-search/" + encodeURIComponent(term), { cache: "no-store" });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    return [];
+  }
+}

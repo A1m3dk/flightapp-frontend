@@ -1,5 +1,58 @@
-import { useState } from "react";
-import { fetchRouteSearch } from "./api";
+import { useState, useRef } from "react";
+import { fetchRouteSearch, fetchAirportSearch } from "./api";
+
+function AirportField({ label, value, onSelect }) {
+  const [text, setText] = useState(value || "");
+  const [options, setOptions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const timerRef = useRef(null);
+
+  function handleChange(e) {
+    const val = e.target.value;
+    setText(val);
+    onSelect("");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (val.trim().length < 2) {
+      setOptions([]);
+      setOpen(false);
+      return;
+    }
+    timerRef.current = setTimeout(async () => {
+      const results = await fetchAirportSearch(val.trim());
+      setOptions(results);
+      setOpen(results.length > 0);
+    }, 300);
+  }
+
+  function pick(opt) {
+    setText(opt.iata + " — " + opt.city);
+    onSelect(opt.iata);
+    setOpen(false);
+    setOptions([]);
+  }
+
+  return (
+    <div className="airport-field">
+      <input
+        className="search-input"
+        placeholder={label}
+        value={text}
+        onChange={handleChange}
+        onFocus={() => options.length > 0 && setOpen(true)}
+      />
+      {open && (
+        <div className="airport-dropdown">
+          {options.map((opt, i) => (
+            <button key={i} className="airport-option" onClick={() => pick(opt)}>
+              <span className="airport-option-code">{opt.iata}</span>
+              <span className="airport-option-name">{opt.city ? opt.city + " — " : ""}{opt.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function RouteSearch({ onPick, onClose }) {
   const [dep, setDep] = useState("");
@@ -13,7 +66,7 @@ function RouteSearch({ onPick, onClose }) {
     if (!dep || !arr || !date) return;
     setLoading(true);
     setSearched(false);
-    const data = await fetchRouteSearch(dep.trim().toUpperCase(), arr.trim().toUpperCase(), date);
+    const data = await fetchRouteSearch(dep, arr, date);
     setResults(data);
     setLoading(false);
     setSearched(true);
@@ -28,25 +81,15 @@ function RouteSearch({ onPick, onClose }) {
         </div>
 
         <div className="route-inputs">
-          <input
-            className="search-input"
-            placeholder="From (e.g. DXB)"
-            value={dep}
-            onChange={(e) => setDep(e.target.value)}
-          />
-          <input
-            className="search-input"
-            placeholder="To (e.g. LHR)"
-            value={arr}
-            onChange={(e) => setArr(e.target.value)}
-          />
+          <AirportField label="From (city or code)" onSelect={setDep} />
+          <AirportField label="To (city or code)" onSelect={setArr} />
           <input
             className="search-input"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
-          <button className="search-button" onClick={handleFind} disabled={loading}>
+          <button className="search-button" onClick={handleFind} disabled={loading || !dep || !arr}>
             {loading ? "Searching" : "Find"}
           </button>
         </div>
@@ -56,11 +99,7 @@ function RouteSearch({ onPick, onClose }) {
             <p className="no-data-msg">No matching flights found for that route and date.</p>
           )}
           {results.map((f, i) => (
-            <button
-              key={i}
-              className="route-result-item"
-              onClick={() => onPick(f.number, date)}
-            >
+            <button key={i} className="route-result-item" onClick={() => onPick(f.number, date)}>
               <span className="route-result-number">{f.number}</span>
               <span className="route-result-airline">{f.airline}</span>
               <span className="route-result-time">
