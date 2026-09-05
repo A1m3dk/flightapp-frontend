@@ -623,10 +623,28 @@ body {
   flex-direction: column;
   gap: 0.6rem;
   margin-bottom: 1rem;
+}
+
+.airport-field {
   position: relative;
 }
 
-.airport-field { position: relative; z-index: 5; }
+.airport-field:nth-child(1) { z-index: 6; }
+.airport-field:nth-child(2) { z-index: 5; }
+
+.airport-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  margin-top: 0.3rem;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
 
 .route-results {
   display: flex;
