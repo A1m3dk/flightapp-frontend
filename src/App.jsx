@@ -256,6 +256,19 @@ function App() {
             Enable background alerts
           </button>
         )}
+              <EasterEggs />
+
+      {devNoteOpen && (
+        <div className="dev-note-overlay" onClick={() => setDevNoteOpen(false)}>
+          <div className="dev-note-card" onClick={(e) => e.stopPropagation()}>
+            <p className="dev-note-title">✈ FROM THE FLIGHT DECK</p>
+            <p className="dev-note-body">
+              Built from scratch by A1m3dk — survived npm path errors, CORS walls, OAuth detours, and more case-sensitivity bugs than any app deserves. Thanks for flying FlightApp.
+            </p>
+            <button className="dev-note-close" onClick={() => setDevNoteOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
       </div>
 
       {!isOnline && (
