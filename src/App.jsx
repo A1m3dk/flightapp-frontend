@@ -33,16 +33,6 @@ import RouteSearch from "./RouteSearch";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
-
-    function handleTitleTap() {
-    const now = Date.now();
-    const recent = [...titleTaps, now].filter((t) => now - t < 2000);
-    setTitleTaps(recent);
-    if (recent.length >= 5) {
-      setDevNoteOpen(true);
-      setTitleTaps([]);
-    }
-  }
 }
 
 const TABS = ["Flight", "Timeline", "Live", "More"];
