@@ -20,6 +20,7 @@ import {
 import { setupPushNotifications, disablePushNotifications, checkPushStatus, getDeviceIdSync } from "./push";
 import FlightStatusCard from "./FlightStatusCard";
 import FlightMap from "./FlightMap";
+import EasterEggs from "./EasterEggs";
 import AtcLinks from "./AtcLinks";
 import TrackedFlights from "./TrackedFlights";
 import FlightTimeline from "./FlightTimeline";
@@ -32,12 +33,24 @@ import RouteSearch from "./RouteSearch";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
+
+    function handleTitleTap() {
+    const now = Date.now();
+    const recent = [...titleTaps, now].filter((t) => now - t < 2000);
+    setTitleTaps(recent);
+    if (recent.length >= 5) {
+      setDevNoteOpen(true);
+      setTitleTaps([]);
+    }
+  }
 }
 
 const TABS = ["Flight", "Timeline", "Live", "More"];
 
 function App() {
   const [flightNumber, setFlightNumber] = useState("");
+    const [titleTaps, setTitleTaps] = useState([]);
+  const [devNoteOpen, setDevNoteOpen] = useState(false);
   const [date, setDate] = useState(todayDate());
   const [flight, setFlight] = useState(null);
   const [aircraftPhoto, setAircraftPhoto] = useState(null);
@@ -121,6 +134,14 @@ function App() {
     const numberToUse = overrideNumber || flightNumber;
     const dateToUse = overrideDate || date;
     if (!numberToUse || !dateToUse) return;
+
+    if (numberToUse.trim().toUpperCase() === "TOGA") {
+      setFlight(null);
+      setError("");
+      setLoading(false);
+      setFlight({ __toga: true });
+      return;
+    }
 
     const cacheKey = numberToUse.replace(/\s/g, "").toUpperCase() + "_" + dateToUse;
 
@@ -226,7 +247,7 @@ function App() {
   return (
     <div className="app-shell">
       <div className="app-header">
-        <h1 className="app-title">FLIGHTAPP</h1>
+        <h1 className="app-title" onClick={handleTitleTap} style={{ cursor: "default" }}>FLIGHTAPP</h1>
         <button className="settings-gear" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
       </div>
       <div className="subtitle-row">
@@ -313,7 +334,16 @@ function App() {
         </div>
       )}
 
-      {flight && !loading && (
+      {flight && !loading && flight.__toga && (
+        <div className="panel">
+          <p className="toga-card">
+            TOGA — Take Off, Go Around.<br />
+            No flight found, but the pilots say hi. 🛫
+          </p>
+        </div>
+      )}
+
+      {flight && !loading && !flight.__toga && (
         <>
           <div className="tab-bar">
             {TABS.map((tab) => (
@@ -334,6 +364,7 @@ function App() {
                 aircraftPhoto={aircraftPhoto}
                 aircraftInfo={aircraftInfo}
                 lastFetchedAt={lastFetchedAt}
+                
               />
               <button
                 className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
