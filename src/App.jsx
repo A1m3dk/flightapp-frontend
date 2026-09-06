@@ -49,7 +49,7 @@ const TABS = ["Flight", "Timeline", "Live", "More"];
 
 function App() {
   const [flightNumber, setFlightNumber] = useState("");
-    const [titleTaps, setTitleTaps] = useState([]);
+  const [titleTaps, setTitleTaps] = useState([]);
   const [devNoteOpen, setDevNoteOpen] = useState(false);
   const [date, setDate] = useState(todayDate());
   const [flight, setFlight] = useState(null);
@@ -187,6 +187,15 @@ function App() {
       setFlight(null);
     } finally {
       setLoading(false);
+    }
+  }
+  function handleTitleTap() {
+    const now = Date.now();
+    const recent = [...titleTaps, now].filter((t) => now - t < 2000);
+    setTitleTaps(recent);
+    if (recent.length >= 5) {
+      setDevNoteOpen(true);
+      setTitleTaps([]);
     }
   }
 
