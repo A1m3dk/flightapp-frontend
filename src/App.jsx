@@ -470,6 +470,9 @@ function App() {
       {routeSearchOpen && (
         <RouteSearch onPick={handleRoutePick} onClose={() => setRouteSearchOpen(false)} />
       )}
+            {scanOpen && (
+        <BoardingPassScan onPick={handleScanPick} onClose={() => setScanOpen(false)} />
+      )}
     </div>
   );
 }
