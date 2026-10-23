@@ -846,3 +846,28 @@ body {
   text-align: center;
   line-height: 1.6;
 }
+
+.inbound-banner { border-radius: 10px; padding: 0.8rem 1rem; margin-top: 0.85rem; border: 1px solid var(--border); font-family: var(--mono); }
+.inbound-late { background: rgba(255, 92, 92, 0.1); border-color: rgba(255, 92, 92, 0.4); }
+.inbound-ok { background: rgba(61, 220, 132, 0.08); border-color: rgba(61, 220, 132, 0.3); }
+.inbound-title { font-size: 0.78rem; font-weight: 600; margin: 0 0 0.3rem; }
+.inbound-late .inbound-title { color: var(--red); }
+.inbound-ok .inbound-title { color: var(--green); }
+.inbound-text { font-size: 0.74rem; color: var(--text); margin: 0 0 0.3rem; line-height: 1.45; }
+.inbound-note { font-size: 0.62rem; color: var(--text-dim); margin: 0; }
+
+.metar-tag { font-family: var(--mono); font-size: 0.65rem; color: var(--amber); text-transform: uppercase; letter-spacing: 0.08em; margin: 0.9rem 0 0.4rem; }
+.metar-raw { font-family: var(--mono); font-size: 0.72rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.8rem; margin: 0; white-space: pre-wrap; word-break: break-word; }
+
+.co2-big { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: var(--text); margin: 0 0 0.2rem; }
+.co2-sub { font-family: var(--mono); font-size: 0.75rem; color: var(--amber); margin: 0 0 0.8rem; }
+.co2-detail { font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim); margin: 0 0 0.4rem; line-height: 1.5; }
+
+.bp-file-button { display: inline-block; text-align: center; }
+.bp-note { font-family: var(--sans); font-size: 0.72rem; color: var(--text-dim); margin: 0.7rem 0; line-height: 1.4; }
+.bp-result { background: var(--panel-raised); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-top: 0.8rem; }
+.bp-line { font-family: var(--mono); font-size: 1rem; font-weight: 600; color: var(--text); margin: 0 0 0.2rem; }
+.bp-sub { font-family: var(--mono); font-size: 0.75rem; color: var(--amber); margin: 0 0 0.8rem; }
+.bp-paste { margin-top: 1rem; font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); }
+.bp-paste summary { cursor: pointer; margin-bottom: 0.6rem; }
+.bp-textarea { width: 100%; min-height: 70px; margin-bottom: 0.5rem; resize: vertical; }

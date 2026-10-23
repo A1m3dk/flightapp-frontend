@@ -30,6 +30,10 @@ import AirportDisruptions from "./AirportDisruptions";
 import AircraftEvents from "./AircraftEvents";
 import AirlineInfo from "./AirlineInfo";
 import RouteSearch from "./RouteSearch";
+import BoardingPassScan from "./BoardingPassScan";
+import InboundWarning from "./InboundWarning";
+import MetarPanel from "./MetarPanel";
+import CarbonEstimate from "./CarbonEstimate";
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -59,6 +63,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("Flight");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [routeSearchOpen, setRouteSearchOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [viewingCached, setViewingCached] = useState(false);
 
   useEffect(() => {
@@ -243,6 +248,14 @@ function App() {
     handleSearch(number, pickedDate);
   }
 
+    function handleScanPick(number, pickedDate) {
+    setFlightNumber(number);
+    setDate(pickedDate);
+    setScanOpen(false);
+    setSearchOpen(false);
+    handleSearch(number, pickedDate);
+  }
+
   return (
     <div className="app-shell">
       <div className="app-header">
@@ -316,9 +329,14 @@ function App() {
       )}
 
       {searchOpen && (
-        <button className="search-toggle route-toggle" onClick={() => setRouteSearchOpen(true)}>
-          Find flights by route instead
-        </button>
+        <div className="search-toggle-row route-toggle">
+          <button className="search-toggle" onClick={() => setRouteSearchOpen(true)}>Find by route</button>
+                    <button className="search-toggle" onClick={() => setScanOpen(true)}>
+            Scan boarding pass
+          </button>
+                        <InboundWarning flight={flight} date={date} />
+          <button className="search-toggle" onClick={() => setScanOpen(true)}>Scan boarding pass</button>
+        </div>
       )}
 
       {recent.length > 0 && searchOpen && (
@@ -430,6 +448,9 @@ function App() {
                   <AirlineInfo airline={flight.airline} />
                   <AirportDisruptions icao={flight.departure?.airport?.iata} label={flight.departure?.airport?.iata} />
                   <AirportDisruptions icao={flight.arrival?.airport?.iata} label={flight.arrival?.airport?.iata} />
+                                    <CarbonEstimate flight={flight} aircraftInfo={aircraftInfo} />
+                  <MetarPanel icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
+                  <MetarPanel icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
                 </>
               )}
             </>

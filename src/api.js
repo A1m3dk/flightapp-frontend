@@ -65,10 +65,19 @@ export async function fetchAirportStats(iata) {
   }
 }
 
+const historyCache = new Map();
+
 export async function fetchAircraftHistory(reg, date) {
+  const key = reg + "|" + date;
+  const hit = historyCache.get(key);
+  if (hit && Date.now() - hit.t < 10 * 60 * 1000) return hit.data;
   try {
-    const data = await fetchJson(BACKEND_URL + "/api/aircraft-history/" + reg + "/" + date, { cache: "no-store" });
-    return Array.isArray(data) ? data : [];
+    const res = await fetch(BACKEND_URL + "/api/aircraft-history/" + reg + "/" + date, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : [];
+    historyCache.set(key, { t: Date.now(), data: list });
+    return list;
   } catch (err) {
     return [];
   }
@@ -102,5 +111,15 @@ export async function fetchAirportSearch(term) {
     return await res.json();
   } catch (err) {
     return [];
+  }
+}
+
+export async function fetchMetar(icao) {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/metar/" + icao, { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
   }
 }
