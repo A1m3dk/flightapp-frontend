@@ -160,7 +160,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
         <div className="leg-col">
           <p className="leg-label">Departure &middot; {dep?.airport?.timeZone || ""}</p>
           <p className="leg-row"><span>Scheduled</span><span>{formatTime(dep?.scheduledTime?.local)}</span></p>
-          <p className="leg-row"><span>Actual/Est</span><span>{formatTime(dep?.actualTime?.local || dep?.predictedTime?.local)}</span></p>
+          <p className="leg-row"><span>Actual/Est</span><span>{formatTime()}</span></p>
           <span className={"status-pill " + (depDelayMin > 15 ? "delayed" : "ontime")}>
             {depDelayMin > 0 ? "DELAYED " + depDelayMin + "M" : "ON TIME"}
           </span>
@@ -187,7 +187,7 @@ function FlightStatusCard({ flight, aircraftPhoto, aircraftInfo, lastFetchedAt }
         <div className="leg-col">
           <p className="leg-label">Arrival &middot; {arr?.airport?.timeZone || ""}</p>
           <p className="leg-row"><span>Scheduled</span><span>{formatTime(arr?.scheduledTime?.local)}</span></p>
-          <p className="leg-row"><span>Actual/Est</span><span>{formatTime(arr?.actualTime?.local || arr?.predictedTime?.local)}</span></p>
+          <p className="leg-row"><span>Actual/Est</span><span>{formatTime(arr?.actualTime?.local || arr?.revisedTime?.local || arr?.predictedTime?.local)}</span></p>
           <span className={"status-pill " + (arrDelayMin > 15 ? "delayed" : "ontime")}>
             {arrDelayMin > 0 ? "DELAYED " + arrDelayMin + "M" : "ON TIME"}
           </span>
@@ -299,7 +299,7 @@ function getPhaseClass(phase) {
 function getDelayMinutes(leg) {
   if (!leg) return 0;
   const scheduled = leg.scheduledTime?.local;
-  const actual = leg.actualTime?.local || leg.predictedTime?.local;
+  const actual = leg.actualTime?.local || leg.revisedTime?.local || leg.predictedTime?.local;
   if (!scheduled || !actual) return 0;
   const diffMs = new Date(actual) - new Date(scheduled);
   const diffMin = Math.round(diffMs / 60000);

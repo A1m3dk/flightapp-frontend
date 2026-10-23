@@ -30,7 +30,7 @@ function getStatusPhase(status) {
 function getDelayMinutes(leg) {
   if (!leg) return 0;
   const scheduled = leg.scheduledTime?.local;
-  const actual = leg.actualTime?.local || leg.predictedTime?.local;
+  const actual = leg.actualTime?.local || leg.revisedTime?.local || leg.predictedTime?.local;
   if (!scheduled || !actual) return 0;
   const diffMs = new Date(actual) - new Date(scheduled);
   const diffMin = Math.round(diffMs / 60000);
