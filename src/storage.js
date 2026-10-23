@@ -11,10 +11,11 @@ export function getRecentSearches() {
 }
 
 export function addRecentSearch(flightNumber, date) {
+  const clean = flightNumber.replace(/\s/g, "").toUpperCase();
   const list = getRecentSearches().filter(
-    (r) => !(r.flightNumber === flightNumber && r.date === date)
+    (r) => !(r.flightNumber === clean && r.date === date)
   );
-  list.unshift({ flightNumber, date });
+  list.unshift({ flightNumber: clean, date });
   const trimmed = list.slice(0, 5);
   localStorage.setItem(RECENT_KEY, JSON.stringify(trimmed));
   return trimmed;
