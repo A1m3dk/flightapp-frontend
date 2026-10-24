@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import "./App.css";
 import {
   fetchFlightStatus,
@@ -19,38 +19,49 @@ import {
 } from "./storage";
 import { setupPushNotifications, disablePushNotifications, checkPushStatus, getDeviceIdSync } from "./push";
 import FlightStatusCard from "./FlightStatusCard";
-import FlightMap from "./FlightMap";
-import EasterEggs from "./EasterEggs";
 import AtcLinks from "./AtcLinks";
 import TrackedFlights from "./TrackedFlights";
 import FlightTimeline from "./FlightTimeline";
-import Settings from "./Settings";
 import Hero from "./Hero";
 import AirportDisruptions from "./AirportDisruptions";
 import AircraftEvents from "./AircraftEvents";
 import AirlineInfo from "./AirlineInfo";
-import RouteSearch from "./RouteSearch";
-import BoardingPassScan from "./BoardingPassScan";
 import InboundWarning from "./InboundWarning";
 import MetarPanel from "./MetarPanel";
 import CarbonEstimate from "./CarbonEstimate";
+import EasterEggs from "./EasterEggs";
 
-function todayDate() {
-  return new Date().toISOString().slice(0, 10);
-}
+const FlightMap = lazy(() => import("./FlightMap"));
+const RouteSearch = lazy(() => import("./RouteSearch"));
+const BoardingPassScan = lazy(() => import("./BoardingPassScan"));
+const Settings = lazy(() => import("./Settings"));
 
 const TABS = ["Flight", "Timeline", "Live", "More"];
 
+function todayDate() {
+  const d = new Date();
+  return (
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0")
+  );
+}
+
+function cacheKeyFor(number, date) {
+  return number.replace(/\s/g, "").toUpperCase() + "_" + date;
+}
+
 function App() {
   const [flightNumber, setFlightNumber] = useState("");
-  const [titleTaps, setTitleTaps] = useState([]);
-  const [devNoteOpen, setDevNoteOpen] = useState(false);
   const [date, setDate] = useState(todayDate());
   const [flight, setFlight] = useState(null);
   const [aircraftPhoto, setAircraftPhoto] = useState(null);
   const [aircraftInfo, setAircraftInfo] = useState(null);
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [tracked, setTracked] = useState([]);
   const [recent, setRecent] = useState([]);
@@ -65,16 +76,21 @@ function App() {
   const [routeSearchOpen, setRouteSearchOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [viewingCached, setViewingCached] = useState(false);
+  const [titleTaps, setTitleTaps] = useState([]);
+  const [devNoteOpen, setDevNoteOpen] = useState(false);
+
+  const searchId = useRef(0);
 
   useEffect(() => {
     setRecent(getRecentSearches());
+    setTracked(getCachedTrackedFlights());
     const id = getDeviceIdSync();
     setDeviceId(id);
     refreshTracked(id);
     checkPushStatus().then(setPushEnabled);
 
-    function goOnline() { setIsOnline(true); }
-    function goOffline() { setIsOnline(false); }
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
     return () => {
@@ -88,7 +104,6 @@ function App() {
     const sorted = [...tracked].sort((a, b) => a.date.localeCompare(b.date));
     const primary = sorted[0];
     setAutoLoaded(true);
-    setSearchOpen(false);
     handleSearch(primary.flightNumber, primary.date);
   }, [tracked, autoLoaded]);
 
@@ -99,6 +114,10 @@ function App() {
     }
     try {
       const list = await getTrackedFlights(id);
+      if (!Array.isArray(list)) {
+        setTracked(getCachedTrackedFlights());
+        return;
+      }
       setTracked(list);
       cacheTrackedFlights(list);
     } catch (err) {
@@ -126,23 +145,22 @@ function App() {
   }
 
   async function handleSearch(overrideNumber, overrideDate) {
-    const numberToUse = overrideNumber || flightNumber;
+    const numberToUse = (overrideNumber || flightNumber || "").trim();
     const dateToUse = overrideDate || date;
     if (!numberToUse || !dateToUse) return;
 
-    if (numberToUse.trim().toUpperCase() === "TOGA") {
-      setFlight(null);
+    if (numberToUse.toUpperCase() === "TOGA") {
       setError("");
       setLoading(false);
       setFlight({ __toga: true });
       return;
     }
 
-    const cacheKey = numberToUse.replace(/\s/g, "").toUpperCase() + "_" + dateToUse;
+    const myId = ++searchId.current;
+    const key = cacheKeyFor(numberToUse, dateToUse);
+    const cached = getCachedFlightData(key);
 
-    setLoading(true);
     setError("");
-    setFlight(null);
     setAircraftPhoto(null);
     setAircraftInfo(null);
     setPosition(null);
@@ -150,47 +168,60 @@ function App() {
     setViewingCached(false);
 
     if (!navigator.onLine) {
-      const cached = getCachedFlightData(cacheKey);
       setLoading(false);
+      setRefreshing(false);
       if (cached) {
         setFlight(cached);
         setViewingCached(true);
+        setSearchOpen(false);
       } else {
-        setError("You're offline and this flight isn't cached yet.");
+        setFlight(null);
+        setError("You're offline and this flight isn't saved on this device yet.");
       }
       return;
     }
 
+    if (cached) {
+      setFlight(cached);
+      setLastFetchedAt(null);
+      setLoading(false);
+      setRefreshing(true);
+      setSearchOpen(false);
+    } else {
+      setFlight(null);
+      setLoading(true);
+    }
+
     try {
       const data = await fetchFlightStatus(numberToUse, dateToUse);
+      if (myId !== searchId.current) return;
+      if (!data) throw new Error("Flight not found");
+
       setFlight(data);
       setLastFetchedAt(new Date());
-      cacheFlightData(cacheKey, data);
-
-      const updatedRecent = addRecentSearch(numberToUse, dateToUse);
-      setRecent(updatedRecent);
+      setLoading(false);
+      setRefreshing(false);
+      setSearchOpen(false);
+      cacheFlightData(key, data);
+      setRecent(addRecentSearch(numberToUse, dateToUse));
 
       if (data.aircraft?.reg) {
-        fetchAircraftPhoto(data.aircraft.reg).then(setAircraftPhoto).catch(() => setAircraftPhoto(null));
-        fetchAircraftInfo(data.aircraft.reg).then(setAircraftInfo).catch(() => setAircraftInfo(null));
+        fetchAircraftPhoto(data.aircraft.reg).then((p) => {
+          if (myId === searchId.current) setAircraftPhoto(p);
+        });
+        fetchAircraftInfo(data.aircraft.reg).then((info) => {
+          if (myId === searchId.current) setAircraftInfo(info);
+        });
       }
-
-      const callsign = data.callSign || numberToUse;
-      fetchLivePosition(callsign).then(setPosition).catch(() => setPosition(null));
+      fetchLivePosition(data.callSign || numberToUse).then((pos) => {
+        if (myId === searchId.current) setPosition(pos);
+      });
     } catch (err) {
-      setError(err?.message || "Flight look-up failed. Please try again.");
-      setFlight(null);
-    } finally {
+      if (myId !== searchId.current) return;
       setLoading(false);
-    }
-  }
-  function handleTitleTap() {
-    const now = Date.now();
-    const recent = [...titleTaps, now].filter((t) => now - t < 2000);
-    setTitleTaps(recent);
-    if (recent.length >= 5) {
-      setDevNoteOpen(true);
-      setTitleTaps([]);
+      setRefreshing(false);
+      if (cached) setViewingCached(true);
+      else setError(err.message);
     }
   }
 
@@ -199,12 +230,12 @@ function App() {
   }
 
   function isCurrentFlightTracked() {
-    if (!flight) return false;
+    if (!flight || flight.__toga) return false;
     return tracked.find((f) => f.flightNumber === flight.number && f.date === date) != null;
   }
 
   async function handleTrackToggle() {
-    if (!flight) return;
+    if (!flight || flight.__toga) return;
 
     const existing = tracked.find((f) => f.flightNumber === flight.number && f.date === date);
     if (existing) {
@@ -230,7 +261,6 @@ function App() {
   function handleSelectTracked(f) {
     setFlightNumber(f.flightNumber);
     setDate(f.date);
-    setSearchOpen(false);
     handleSearch(f.flightNumber, f.date);
   }
 
@@ -244,112 +274,121 @@ function App() {
     setFlightNumber(number);
     setDate(pickedDate);
     setRouteSearchOpen(false);
-    setSearchOpen(false);
     handleSearch(number, pickedDate);
   }
 
-    function handleScanPick(number, pickedDate) {
+  function handleScanPick(number, pickedDate) {
     setFlightNumber(number);
     setDate(pickedDate);
     setScanOpen(false);
-    setSearchOpen(false);
     handleSearch(number, pickedDate);
   }
 
+  function handleTitleTap() {
+    const now = Date.now();
+    const recentTaps = [...titleTaps, now].filter((t) => now - t < 2000);
+    setTitleTaps(recentTaps);
+    if (recentTaps.length >= 5) {
+      setDevNoteOpen(true);
+      setTitleTaps([]);
+    }
+  }
+
+  const showFlight = flight && !flight.__toga;
+
   return (
     <div className="app-shell">
-      <div className="app-header">
-        <h1 className="app-title" onClick={handleTitleTap} style={{ cursor: "default" }}>FLIGHTAPP</h1>
-        <button className="settings-gear" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
-      </div>
-      <div className="subtitle-row">
-        <p className="app-subtitle">Personal Flight Ops Tracker</p>
-        {!pushEnabled && (
-          <button className="enable-push-pill" onClick={enablePush}>
-            Enable background alerts
-          </button>
-        )}
-              <EasterEggs />
-
-      {devNoteOpen && (
-        <div className="dev-note-overlay" onClick={() => setDevNoteOpen(false)}>
-          <div className="dev-note-card" onClick={(e) => e.stopPropagation()}>
-            <p className="dev-note-title">✈ FROM THE FLIGHT DECK</p>
-            <p className="dev-note-body">
-              Built from scratch by A1m3dk — survived npm path errors, CORS walls, OAuth detours, and more case-sensitivity bugs than any app deserves. Thanks for flying FlightApp.
-            </p>
-            <button className="dev-note-close" onClick={() => setDevNoteOpen(false)}>Close</button>
-          </div>
+      <header className="app-header">
+        <div className="brand" onClick={handleTitleTap}>
+          <span className="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+          </span>
+          <h1 className="app-title">Flightapp</h1>
         </div>
-      )}
-      </div>
+        <div className="header-actions">
+          {!pushEnabled && (
+            <button className="enable-push-pill" onClick={enablePush}>
+              Turn on alerts
+            </button>
+          )}
+          <button className="settings-gear" aria-label="Settings" onClick={() => setSettingsOpen(true)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <line x1="4" y1="8" x2="20" y2="8" />
+              <circle cx="9" cy="8" r="2.4" className="gear-knob" />
+              <line x1="4" y1="16" x2="20" y2="16" />
+              <circle cx="15" cy="16" r="2.4" className="gear-knob" />
+            </svg>
+          </button>
+        </div>
+      </header>
 
       {!isOnline && (
-        <p className="offline-banner">You're offline — showing cached data where available.</p>
+        <p className="offline-banner">You're offline. Showing saved data where available.</p>
       )}
 
-      {flight && <Hero flight={flight} />}
+      {showFlight && <Hero flight={flight} />}
+      {refreshing && <p className="status-note">Updating…</p>}
+      {viewingCached && <p className="status-note">Showing last saved data.</p>}
 
-      {viewingCached && (
-        <p className="cached-note">Showing last known data (offline).</p>
-      )}
-
-      
-
-      {searchOpen && (
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Flight number e.g. EK123"
-            value={flightNumber}
-            onChange={(e) => setFlightNumber(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="search-input"
-          />
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="search-input"
-          />
-          <button onClick={() => handleSearch()} className="search-button" disabled={loading}>
-            {loading ? "Searching" : "Search"}
-          </button>
-        </div>
-      )}
-
-            <div className="search-toggle-row">
-        {!searchOpen && (
-          <button className="search-toggle" onClick={() => setSearchOpen(true)}>
-            + Search another flight
-          </button>
+      <section className="search-card">
+        {searchOpen ? (
+          <>
+            <div className="search-fields">
+              <input
+                type="text"
+                placeholder="Flight number, e.g. EK1"
+                value={flightNumber}
+                onChange={(e) => setFlightNumber(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="search-input"
+                autoCapitalize="characters"
+                autoCorrect="off"
+              />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="search-input"
+              />
+              <button onClick={() => handleSearch()} className="search-button" disabled={loading}>
+                {loading ? "Searching…" : "Search"}
+              </button>
+            </div>
+            <div className="search-links">
+              <button className="link-button" onClick={() => setRouteSearchOpen(true)}>Find by route</button>
+              <span className="link-sep" aria-hidden="true">·</span>
+              <button className="link-button" onClick={() => setScanOpen(true)}>Scan boarding pass</button>
+            </div>
+            {recent.length > 0 && (
+              <div className="recent-chips">
+                {recent.map((r, i) => (
+                  <button key={i} className="recent-chip" onClick={() => handleSelectRecent(r)}>
+                    {r.flightNumber} · {r.date}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="search-collapsed">
+            <button className="link-button strong" onClick={() => setSearchOpen(true)}>Search a flight</button>
+            <span className="link-sep" aria-hidden="true">·</span>
+            <button className="link-button" onClick={() => setRouteSearchOpen(true)}>Find by route</button>
+            <span className="link-sep" aria-hidden="true">·</span>
+            <button className="link-button" onClick={() => setScanOpen(true)}>Scan boarding pass</button>
+          </div>
         )}
-        <button className="search-toggle" onClick={() => setRouteSearchOpen(true)}>
-          Find by route
-        </button>
-        <button className="search-toggle" onClick={() => setScanOpen(true)}>
-          Scan boarding pass
-        </button>
-      </div>
-
-
-      {recent.length > 0 && searchOpen && (
-        <div className="recent-chips">
-          {recent.map((r, i) => (
-            <button key={i} className="recent-chip" onClick={() => handleSelectRecent(r)}>
-              {r.flightNumber} · {r.date}
-            </button>
-          ))}
-        </div>
-      )}
+      </section>
 
       {error && <p className="error-msg">{error}</p>}
 
       <TrackedFlights flights={tracked} onSelect={handleSelectTracked} onRemove={handleRemoveTracked} />
 
       {loading && (
-        <div className="panel skeleton-panel">
+        <div className="panel">
           <div className="skeleton-line skeleton-title"></div>
           <div className="skeleton-line skeleton-sub"></div>
           <div className="skeleton-grid">
@@ -359,28 +398,28 @@ function App() {
         </div>
       )}
 
-      {flight && !loading && flight.__toga && (
+      {flight && flight.__toga && (
         <div className="panel">
           <p className="toga-card">
-            TOGA — Take Off, Go Around.<br />
-            No flight found, but the pilots say hi. 🛫
+            TOGA: Take Off, Go Around.<br />
+            No flight found, but the pilots say hi.
           </p>
         </div>
       )}
 
-      {flight && !loading && !flight.__toga && (
+      {showFlight && !loading && (
         <>
-          <div className="tab-bar">
+          <nav className="tab-bar">
             {TABS.map((tab) => (
               <button
                 key={tab}
-                className={"tab-button " + (activeTab === tab ? "tab-active" : "")}
+                className={"tab-button" + (activeTab === tab ? " tab-active" : "")}
                 onClick={() => setActiveTab(tab)}
               >
                 {tab}
               </button>
             ))}
-          </div>
+          </nav>
 
           {activeTab === "Flight" && (
             <>
@@ -389,84 +428,103 @@ function App() {
                 aircraftPhoto={aircraftPhoto}
                 aircraftInfo={aircraftInfo}
                 lastFetchedAt={lastFetchedAt}
-                
               />
+              <InboundWarning flight={flight} date={date} />
               <button
-                className={"track-button " + (isCurrentFlightTracked() ? "tracked" : "")}
+                className={"track-button" + (isCurrentFlightTracked() ? " tracked" : "")}
                 onClick={handleTrackToggle}
                 disabled={!isOnline}
               >
-                {isCurrentFlightTracked() ? "✓ Tracking — tap to remove" : "+ Track this flight"}
+                {isCurrentFlightTracked() ? "✓ Tracking · tap to remove" : "Track this flight"}
               </button>
             </>
           )}
 
           {activeTab === "Timeline" && <FlightTimeline flight={flight} />}
 
-          {activeTab === "Live" && (
-            <>
-              {!isOnline ? (
+          {activeTab === "Live" &&
+            (!isOnline ? (
+              <div className="panel">
+                <p className="no-data-msg">Offline. Go online to see live tracking.</p>
+              </div>
+            ) : (
+              <>
                 <div className="panel">
-                  <p className="no-data-msg">Offline — go online to see live flight tracking.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="panel">
-                    <p className="section-heading">Live Position</p>
+                  <p className="section-heading">Live position</p>
+                  <Suspense fallback={<p className="no-data-msg">Loading map…</p>}>
                     <FlightMap position={position} />
-                  </div>
-                  <div className="panel">
-                    <AtcLinks
-                      departureIcao={flight.departure?.airport?.icao}
-                      arrivalIcao={flight.arrival?.airport?.icao}
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
-
-          {activeTab === "More" && (
-            <>
-              {!isOnline ? (
-                <div className="panel">
-                  <p className="no-data-msg">Offline — go online to see live flight tracking.</p>
+                  </Suspense>
                 </div>
-              ) : (
-                <>
-                  <AircraftEvents
-                    reg={flight.aircraft?.reg}
-                    modeS={flight.aircraft?.modeS}
-                    date={date}
-                    currentFlightNumber={flight.number}
+                <div className="panel">
+                  <AtcLinks
+                    departureIcao={flight.departure?.airport?.icao}
+                    arrivalIcao={flight.arrival?.airport?.icao}
                   />
-                  <AirlineInfo airline={flight.airline} />
-                  <AirportDisruptions icao={flight.departure?.airport?.iata} label={flight.departure?.airport?.iata} />
-                  <AirportDisruptions icao={flight.arrival?.airport?.iata} label={flight.arrival?.airport?.iata} />
-                                    <CarbonEstimate flight={flight} aircraftInfo={aircraftInfo} />
-                  <MetarPanel icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
-                  <MetarPanel icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
-                </>
-              )}
-            </>
-          )}
+                </div>
+              </>
+            ))}
+
+          {activeTab === "More" &&
+            (!isOnline ? (
+              <div className="panel">
+                <p className="no-data-msg">Offline. Go online to see more details.</p>
+              </div>
+            ) : (
+              <>
+                <AircraftEvents
+                  reg={flight.aircraft?.reg}
+                  modeS={flight.aircraft?.modeS}
+                  date={date}
+                  currentFlightNumber={flight.number}
+                />
+                <AirlineInfo airline={flight.airline} />
+                <AirportDisruptions icao={flight.departure?.airport?.iata} label={flight.departure?.airport?.iata} />
+                <AirportDisruptions icao={flight.arrival?.airport?.iata} label={flight.arrival?.airport?.iata} />
+                <CarbonEstimate flight={flight} aircraftInfo={aircraftInfo} />
+                <MetarPanel icao={flight.departure?.airport?.icao} label={flight.departure?.airport?.iata} />
+                <MetarPanel icao={flight.arrival?.airport?.icao} label={flight.arrival?.airport?.iata} />
+              </>
+            ))}
         </>
       )}
 
-      <p className="app-footer">Beta 5.00 — Made by A1m3dk</p>
+      <p className="app-footer">Beta 6.00 · Made by A1m3dk</p>
 
-      <Settings
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        pushEnabled={pushEnabled}
-        onTogglePush={handleTogglePush}
-      />
+      <EasterEggs />
+
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <Settings
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            pushEnabled={pushEnabled}
+            onTogglePush={handleTogglePush}
+          />
+        </Suspense>
+      )}
 
       {routeSearchOpen && (
-        <RouteSearch onPick={handleRoutePick} onClose={() => setRouteSearchOpen(false)} />
+        <Suspense fallback={null}>
+          <RouteSearch onPick={handleRoutePick} onClose={() => setRouteSearchOpen(false)} />
+        </Suspense>
       )}
-            {scanOpen && (
-        <BoardingPassScan onPick={handleScanPick} onClose={() => setScanOpen(false)} />
+
+      {scanOpen && (
+        <Suspense fallback={null}>
+          <BoardingPassScan onPick={handleScanPick} onClose={() => setScanOpen(false)} />
+        </Suspense>
+      )}
+
+      {devNoteOpen && (
+        <div className="dev-note-overlay" onClick={() => setDevNoteOpen(false)}>
+          <div className="dev-note-card" onClick={(e) => e.stopPropagation()}>
+            <p className="dev-note-title">From the flight deck</p>
+            <p className="dev-note-body">
+              Built from scratch by A1m3dk. It survived npm path errors, CORS walls, OAuth detours and more case-sensitivity bugs than any app deserves. Thanks for flying Flightapp.
+            </p>
+            <button className="dev-note-close" onClick={() => setDevNoteOpen(false)}>Close</button>
+          </div>
+        </div>
       )}
     </div>
   );

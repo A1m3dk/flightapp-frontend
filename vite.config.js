@@ -19,8 +19,8 @@ export default defineConfig({
         name: 'FlightApp',
         short_name: 'FlightApp',
         description: 'Personal flight tracker',
-        theme_color: '#1F3864',
-        background_color: '#1F3864',
+        theme_color: '#0c0d0f',
+        background_color: '#0c0d0f',
         display: 'standalone',
         icons: [
           {

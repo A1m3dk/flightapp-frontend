@@ -24,10 +24,10 @@ export function addRecentSearch(flightNumber, date) {
 export async function getTrackedFlights(deviceId) {
   try {
     const res = await fetch(BACKEND_URL + "/api/tracked/" + deviceId);
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     return await res.json();
   } catch (err) {
-    return [];
+    return null;
   }
 }
 
