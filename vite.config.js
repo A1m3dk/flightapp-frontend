@@ -14,6 +14,7 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        importScripts: ["sw-push.js"],
       },
       manifest: {
         name: 'FlightApp',

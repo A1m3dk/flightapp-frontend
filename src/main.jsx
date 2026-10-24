@@ -1,18 +1,21 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import { registerSW } from 'virtual:pwa-register'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import ErrorBoundary from "./ErrorBoundary.jsx";
+import { registerSW } from "virtual:pwa-register";
 
 registerSW({
   immediate: true,
   onNeedRefresh() {
-    window.location.reload()
+    window.location.reload();
   },
   onOfflineReady() {},
-})
+});
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </React.StrictMode>
+);

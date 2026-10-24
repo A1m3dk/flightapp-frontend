@@ -10,9 +10,25 @@ L.Icon.Default.mergeOptions({
 });
 
 function FlightMap({ position }) {
-  if (!position) {
-    return <p className="no-data-msg">No live position available (flight may not be airborne yet, or outside tracking coverage).</p>;
+  const hasFix =
+    position && typeof position.lat === "number" && typeof position.lon === "number";
+
+  if (!hasFix) {
+    return (
+      <p className="no-data-msg">
+        No live position available. The flight may not be airborne yet, or it's outside tracking coverage.
+      </p>
+    );
   }
+
+  const altitude =
+    typeof position.altitude === "number"
+      ? Math.round(position.altitude).toLocaleString() + " ft"
+      : position.onGround
+      ? "On the ground"
+      : "N/A";
+  const speed = typeof position.speed === "number" ? Math.round(position.speed) + " kt" : "N/A";
+  const heading = typeof position.heading === "number" ? Math.round(position.heading) + "°" : "N/A";
 
   return (
     <div className="map-frame">
@@ -27,11 +43,11 @@ function FlightMap({ position }) {
         />
         <Marker position={[position.lat, position.lon]}>
           <Popup>
-            Altitude: {Math.round(position.altitude)} m
+            Altitude: {altitude}
             <br />
-            Speed: {Math.round(position.speed)} m/s
+            Speed: {speed}
             <br />
-            Heading: {Math.round(position.heading)} deg
+            Heading: {heading}
           </Popup>
         </Marker>
       </MapContainer>

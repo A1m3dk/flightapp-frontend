@@ -21,14 +21,20 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+function getReadyRegistration() {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Service worker not ready")), 8000)),
+  ]);
+}
+
 export async function setupPushNotifications() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     return null;
   }
 
   try {
-    const registration = await navigator.serviceWorker.register("/sw-push.js");
-    await navigator.serviceWorker.ready;
+    const registration = await getReadyRegistration();
 
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return null;
@@ -84,9 +90,21 @@ export async function disablePushNotifications() {
     if (subscription) {
       await subscription.unsubscribe();
     }
-    const deviceId = getDeviceId();
-    await fetch(BACKEND_URL + "/api/push-subscribe/" + deviceId, { method: "DELETE" });
+    await fetch(BACKEND_URL + "/api/push-subscribe/" + getDeviceId(), { method: "DELETE" });
   } catch (err) {
     console.log("Disable push failed:", err.message);
+  }
+}
+
+export async function sendTestPush() {
+  try {
+    const res = await fetch(BACKEND_URL + "/api/test-push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId: getDeviceId() }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { ok: false, reason: "Couldn't reach the server." };
   }
 }

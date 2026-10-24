@@ -573,3 +573,6 @@ input[type="date"].search-input::-webkit-date-and-time-value { text-align: left;
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.settings-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.settings-test-note { margin-top: 10px; }

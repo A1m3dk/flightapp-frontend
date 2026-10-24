@@ -50,7 +50,7 @@ function AircraftEvents({ reg, modeS, date, currentFlightNumber }) {
               <span className="aircraft-event-tag">Right now</span>
               {position.onGround
                 ? "On the ground"
-                : "Airborne at " + Math.round(position.altitude || 0) + "m, " + Math.round(position.speed || 0) + " kt"}
+                : "Airborne at " + Math.round(position.altitude || 0).toLocaleString() + " ft, " + Math.round(position.speed || 0) + " kt"}
             </p>
           )}
           {completed && (
