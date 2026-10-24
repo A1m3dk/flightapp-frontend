@@ -294,16 +294,7 @@ function App() {
         <p className="cached-note">Showing last known data (offline).</p>
       )}
 
-      {!searchOpen && (
-        <div className="search-toggle-row">
-          <button className="search-toggle" onClick={() => setSearchOpen(true)}>
-            + Search another flight
-          </button>
-          <button className="search-toggle" onClick={() => setRouteSearchOpen(true)}>
-            Find by route
-          </button>
-        </div>
-      )}
+      
 
       {searchOpen && (
         <div className="search-bar">
@@ -328,16 +319,20 @@ function App() {
         </div>
       )}
 
-      {searchOpen && (
-        <div className="search-toggle-row route-toggle">
-          <button className="search-toggle" onClick={() => setRouteSearchOpen(true)}>Find by route</button>
-                    <button className="search-toggle" onClick={() => setScanOpen(true)}>
-            Scan boarding pass
+            <div className="search-toggle-row">
+        {!searchOpen && (
+          <button className="search-toggle" onClick={() => setSearchOpen(true)}>
+            + Search another flight
           </button>
-                        <InboundWarning flight={flight} date={date} />
-          <button className="search-toggle" onClick={() => setScanOpen(true)}>Scan boarding pass</button>
-        </div>
-      )}
+        )}
+        <button className="search-toggle" onClick={() => setRouteSearchOpen(true)}>
+          Find by route
+        </button>
+        <button className="search-toggle" onClick={() => setScanOpen(true)}>
+          Scan boarding pass
+        </button>
+      </div>
+
 
       {recent.length > 0 && searchOpen && (
         <div className="recent-chips">
