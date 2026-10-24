@@ -400,8 +400,7 @@ function App() {
 
       {flight && flight.__toga && (
         <div className="panel">
-          <p className="toga-card">
-            TOGA: Take Off, Go Around.<br />
+          <p className="toga-card"> 
             No flight found, but the pilots say hi.
           </p>
         </div>
